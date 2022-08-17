@@ -1,0 +1,4 @@
+<map id="argos::CEPuck2BatteryDefaultSensor" name="argos::CEPuck2BatteryDefaultSensor">
+<area shape="rect" id="node4" href="$classargos_1_1CEPuck2BatteryEquippedEntity.html" title="argos::CEPuck2BatteryEquipped\lEntity" alt="" coords="321,81,535,123"/>
+<area shape="rect" id="node6" href="$classargos_1_1CEPuck2BatteryDischargeModel.html" title="argos::CEPuck2BatteryDischarge\lModel" alt="" coords="424,185,643,227"/>
+</map>

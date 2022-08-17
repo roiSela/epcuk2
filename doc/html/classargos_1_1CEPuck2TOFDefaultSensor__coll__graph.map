@@ -1,0 +1,4 @@
+<map id="argos::CEPuck2TOFDefaultSensor" name="argos::CEPuck2TOFDefaultSensor">
+<area shape="rect" id="node3" href="$classargos_1_1CCI__EPuck2TOFSensor.html" title="argos::CCI_EPuck2TOFSensor" alt="" coords="161,89,367,115"/>
+<area shape="rect" id="node5" href="$classargos_1_1CEPuck2TOFEquippedEntity.html" title="argos::CEPuck2TOFEquipped\lEntity" alt="" coords="391,81,590,123"/>
+</map>
