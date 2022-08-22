@@ -1,0 +1,5 @@
+add_subdirectory(epuck2_sensors)
+add_subdirectory(epuck2_swarm)
+add_subdirectory(epuck2_battery)
+add_subdirectory(epuck2_encoders)
+add_subdirectory(epuck2_camera)

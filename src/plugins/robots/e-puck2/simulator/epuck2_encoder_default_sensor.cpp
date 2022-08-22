@@ -73,7 +73,6 @@ namespace argos {
       /* Go through the sensors */
       if (m_pcEncoderEntity->GetNumSensors() > 0) {
          CEPuck2EncoderEquippedEntity::SSensor& sSens = m_pcEncoderEntity->GetSensor(0);
-
          m_fLeft += sSens.StepsPerCm * sSens.Wheels.GetWheelVelocity(0) / CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
          m_fRight += sSens.StepsPerCm * sSens.Wheels.GetWheelVelocity(1) / CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
 
@@ -87,7 +86,7 @@ namespace argos {
             m_fRight = 0.0;
       }
 
-      if (m_fLeft >= 32767.0) {
+      if (m_fLeft >= 32768.0) {
          m_fLeft -= 65536.0;
       } else if (m_fLeft < -32768.0) {
          m_fLeft += 65536.0;
@@ -121,7 +120,7 @@ namespace argos {
                    "The EPuck2 wheel encoder sensor.",
 
                    "This sensor provides the value of the wheels encoders\n"
-                   "between 0 and 999 which represents a complete wheel revolution.\n"
+                   "between -32768 and 32768, where 1000 steps represent a complete wheel revolution.\n"
                    "In controllers, you must include the ci_epuck2_encoder_sensor.h header.\n\n"
 
                    "REQUIRED XML CONFIGURATION\n\n"
@@ -144,7 +143,7 @@ namespace argos {
                    "It is possible to add uniform noise to the sensors, thus matching the\n"
                    "characteristics of a real robot better. This can be done with the attribute\n"
                    "\"noise_level\", whose allowed range is in [-1,1] and is added to the calculated\n"
-                   "reading. The final sensor reading is always normalised in the [0-999] range.\n\n"
+                   "reading. The final sensor reading is always normalised in the [-32768-32768] range.\n\n"
                    "  <controllers>\n"
                    "    ...\n"
                    "    <my_controller ...>\n"

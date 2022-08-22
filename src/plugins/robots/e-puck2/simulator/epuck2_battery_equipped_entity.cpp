@@ -222,8 +222,8 @@ namespace argos {
          cDeltaOrient.ToAngleAxis(cDeltaAngle, cDeltaAxis);
          /* Calculate new level */
          if (fDeltaPos == 0.0) {
-            if (cDeltaAngle.GetValue() == 0.0) {
-               fDeltaPos = cDeltaAngle.GetValue() * 0.035f;
+            if (cDeltaAngle.GetValue() != 0.0) {
+               fDeltaPos = cDeltaAngle.GetValue() * 0.0265f;
             }
          }
 
@@ -233,7 +233,6 @@ namespace argos {
          } else if (m_pcBattery->GetAvailableCharge() > TH2) {
             f_delta_d = DELTA_D2;
          }
-
          m_pcBattery->SetAvailableCharge(
             Max<Real>(
                0.0,
