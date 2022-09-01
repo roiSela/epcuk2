@@ -127,7 +127,7 @@ namespace argos {
 //      }
 
       inline const CVector3 GetPosition() const {
-         return m_psAnchor->Position + CVector3(0.035, 0.0, 0.07f).Rotate(m_psAnchor->Orientation);
+         return m_psAnchor->Position + CVector3(0.035, 0.0, 0.032f).Rotate(m_psAnchor->Orientation);
       }
 
       inline const CQuaternion GetOrientation() const {

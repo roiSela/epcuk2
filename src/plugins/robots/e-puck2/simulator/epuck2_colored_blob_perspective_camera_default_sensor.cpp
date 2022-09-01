@@ -75,7 +75,7 @@ namespace argos {
                !GetClosestEmbodiedEntityIntersectedByRay(m_sIntersectionItem,
                                                          m_cOcclusionCheckRay,
                                                          m_cEmbodiedEntity)) {
-               /* The LED is visibile */
+               /* The LED is visible */
                /* Calculate the intersection point between the LED ray and the image plane */
                m_cLEDRelative.Normalize();
                m_cLEDRelative *= m_cCamEntity.GetFocalLength() / m_cLEDRelative.GetX();

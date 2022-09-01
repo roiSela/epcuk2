@@ -164,11 +164,9 @@ namespace argos {
                                        Real f_radius,
                                        const CRadians& c_start_angle,
                                        UInt32 un_num_leds,
-                                       SAnchor& s_anchor,
-                                       const CVector3& c_body_offset,
-                                       SAnchor& s_body_anchor,
+                                       const CVector3& c_body_center,
                                        const CVector3& c_front_offset,
-                                       SAnchor& s_front_anchor) {
+                                       SAnchor& s_anchor) {
       CRadians cLEDSpacing = CRadians::TWO_PI / un_num_leds;
       CRadians cAngle;
       CVector3 cOffset;
@@ -184,8 +182,18 @@ namespace argos {
              AddLED(cOffset, s_anchor, TYPE_RGB);
          }
       }
-      AddLED(c_body_offset, s_body_anchor, TYPE_BODY);
-      AddLED(c_front_offset, s_front_anchor, TYPE_FRONT);
+
+      AddLED(c_front_offset, s_anchor, TYPE_FRONT);
+
+      for(UInt32 i = 0; i < un_num_leds; ++i) {
+         cAngle = c_start_angle + i * cLEDSpacing;
+         cAngle.SignedNormalize();
+         cOffset.Set(f_radius, 0.0f, 0.0f);
+         cOffset.RotateZ(cAngle);
+         cOffset += c_body_center;
+         AddLED(cOffset, s_anchor, TYPE_BODY);
+      }
+
    }
 
    /****************************************/
@@ -270,7 +278,10 @@ namespace argos {
                     GetId() <<
                     "\": there is no LEDs, m_tLEDs.size() = " <<
                     m_tLEDs.size());
-       m_tLEDs[9]->LED.SetColor(c_state ? CColor::GREEN : CColor::BLACK);
+       for (UInt32 i = 9; i < m_tLEDs.size(); ++i) {
+          m_tLEDs[i]->LED.SetColor(c_state ? CColor::GREEN : CColor::BLACK);
+          LOG << i << " " << m_tLEDs[i]->LED.GetColor() << std::endl;
+       }
    }
 
    /****************************************/
@@ -286,7 +297,14 @@ namespace argos {
                     (vec_colors[4] == CColor::BLACK || vec_colors[4] == CColor::RED) &&
                     (vec_colors[6] == CColor::BLACK || vec_colors[6] == CColor::RED) &&
                     (vec_colors[8] == CColor::BLACK || vec_colors[8] == CColor::RED) &&
-                    (vec_colors[9] == CColor::BLACK || vec_colors[9] == CColor::GREEN),
+                    (vec_colors[9] == CColor::BLACK || vec_colors[9] == CColor::GREEN) &&
+                    (vec_colors[10] == CColor::BLACK || vec_colors[10] == CColor::GREEN) &&
+                    (vec_colors[11] == CColor::BLACK || vec_colors[11] == CColor::GREEN) &&
+                    (vec_colors[12] == CColor::BLACK || vec_colors[12] == CColor::GREEN) &&
+                    (vec_colors[13] == CColor::BLACK || vec_colors[13] == CColor::GREEN) &&
+                    (vec_colors[14] == CColor::BLACK || vec_colors[14] == CColor::GREEN) &&
+                    (vec_colors[15] == CColor::BLACK || vec_colors[15] == CColor::GREEN) &&
+                    (vec_colors[16] == CColor::BLACK || vec_colors[16] == CColor::GREEN),
                    "CEPuck2LEDEquippedEntity::SetAllLEDsColors(), id=\"" <<
                    GetId() << "\": the provided colours are invalid.");
       if(vec_colors.size() == m_tLEDs.size()) {

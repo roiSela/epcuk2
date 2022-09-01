@@ -19,6 +19,7 @@
 CEPuck2Camera::CEPuck2Camera() :
    m_pcWheels(NULL),
    m_pcCamera(NULL),
+   m_pcLedAct(NULL),
    m_fWheelVelocity(2.5f) {}
 
 /****************************************/
@@ -27,6 +28,7 @@ CEPuck2Camera::CEPuck2Camera() :
 void CEPuck2Camera::Init(TConfigurationNode& t_node) {
    m_pcWheels        = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcCamera        = GetSensor  <CCI_ColoredBlobPerspectiveCameraSensor>("epuck2_colored_blob_perspective_camera");
+   m_pcLedAct        = GetActuator<CCI_EPuck2LEDsActuator          >("epuck2_leds"          );
 
    GetNodeAttributeOrDefault(t_node, "velocity", m_fWheelVelocity, m_fWheelVelocity);
 
@@ -42,25 +44,33 @@ void CEPuck2Camera::ControlStep() {
    unsigned uTick = (&CSimulator::GetInstance())->GetSpace().GetSimulationClock();
    std::string sId = CCI_Controller::GetId();
    // LOG << sId << std::fixed << std::setprecision(1) << std::endl;
+   if (atoi(sId.c_str()) <= 0) {
+      m_pcLedAct->SetRedLed1(true);
+//      m_pcLedAct->SetFrontLed(true);
+//      m_pcLedAct->SetBodyLed(true);
+//      m_pcLedAct->SetAllRedLeds(true);
+//      m_pcLedAct->SetAllRGBColors(CColor::WHITE);
+//      m_pcWheels->SetLinearVelocity(-0.25, 0.25);
+   } else {
 
-   CRadians cZAngle, cYAngle, cXAngle;
-   CEPuck2Entity cEPuck =
-         *dynamic_cast<CEPuck2Entity*>(&(&CSimulator::GetInstance())->GetSpace().GetEntity(
-               CCI_Controller::GetId()));
-   cEPuck.GetEmbodiedEntity().GetOriginAnchor().Orientation.ToEulerAngles(cZAngle, cYAngle, cXAngle);
-   LOG << "Angle: " << ToDegrees(cZAngle).GetValue() << std::endl;
+      CRadians cZAngle, cYAngle, cXAngle;
+      CEPuck2Entity cEPuck =
+            *dynamic_cast<CEPuck2Entity*>(&(&CSimulator::GetInstance())->GetSpace().GetEntity(
+                  CCI_Controller::GetId()));
+      cEPuck.GetEmbodiedEntity().GetOriginAnchor().Orientation.ToEulerAngles(cZAngle, cYAngle, cXAngle);
+      LOG << "Angle: " << ToDegrees(cZAngle).GetValue() << std::endl;
 
-   /* Perspective Camera */
-   const CCI_ColoredBlobPerspectiveCameraSensor::SReadings& sReadings = m_pcCamera->GetReadings();
-   LOG << "Camera: " << std::endl;
-   for (size_t i = 0; i < sReadings.BlobList.size(); i++) {
-       CCI_ColoredBlobPerspectiveCameraSensor::SBlob* sBlob = sReadings.BlobList[i];
-      LOG << "...(Color = " << sBlob->Color << ", X = " << sBlob->X << ",Y = " << sBlob->Y << ")" << std::endl;
+      /* Perspective Camera */
+      const CCI_ColoredBlobPerspectiveCameraSensor::SReadings& sReadings = m_pcCamera->GetReadings();
+      LOG << "Camera: " << std::endl;
+      for (size_t i = 0; i < sReadings.BlobList.size(); i++) {
+          CCI_ColoredBlobPerspectiveCameraSensor::SBlob* sBlob = sReadings.BlobList[i];
+         LOG << "...(Color = " << sBlob->Color << ", X = " << sBlob->X << ",Y = " << sBlob->Y << ")" << std::endl;
+      }
+
+      /* Movement */
+      m_pcWheels->SetLinearVelocity(m_fWheelVelocity, -m_fWheelVelocity);
    }
-
-   /* Movement */
-   m_pcWheels->SetLinearVelocity(m_fWheelVelocity, -m_fWheelVelocity);
-
 }
 
 /****************************************/

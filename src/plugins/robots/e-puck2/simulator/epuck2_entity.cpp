@@ -31,28 +31,29 @@ namespace argos {
    /****************************************/
 
    static const Real BODY_RADIUS                = 0.035f;
-   static const Real BODY_HEIGHT                = 0.086f;
 
    static const Real INTERWHEEL_DISTANCE        = 0.053f;
    static const Real HALF_INTERWHEEL_DISTANCE   = INTERWHEEL_DISTANCE * 0.5f;
    static const Real WHEEL_RADIUS               = 0.0205f;
 
-   static const Real PROXIMITY_SENSOR_RING_ELEVATION       = 0.07f;
+   static const Real PROXIMITY_SENSOR_RING_ELEVATION       = 0.043f;
    static const Real PROXIMITY_SENSOR_RING_RADIUS          = BODY_RADIUS+0.001f;
    static const Real PROXIMITY_SENSOR_RING_RANGE           = 0.06f;
    static const Real LIGHT_SENSOR_RING_RANGE               = 0.10f;
 
    static const CRadians LED_RING_START_ANGLE   = CRadians::ZERO; // CRadians((ARGOS_PI / 8.0f) * 0.5f);
    static const Real LED_RING_RADIUS            = BODY_RADIUS + 0.002;
-   static const Real LED_RING_ELEVATION         = 0.086f;
+   static const Real LED_RING_ELEVATION         = 0.048f;
    static const Real RAB_ELEVATION              = LED_RING_ELEVATION;
 
    static const Real TOF_SENSOR_RANGE     = 2.0f; // 200.0f
-   static const Real TOF_SENSOR_ELEVATION = 0.07f;
+   static const Real TOF_SENSOR_ELEVATION = 0.039f;
 
-   static const Real GREEN_LED_ELEVATION = BODY_HEIGHT + 0.002f;
-   static const Real RED_LED_ELEVATION   = 0.07f;
+   static const Real GREEN_LED_ELEVATION = PROXIMITY_SENSOR_RING_ELEVATION;
 
+   static const Real RED_LED_ELEVATION   = 0.032f;
+   static const Real RED_LED_SIDE        = -0.01f;
+   static const Real RED_LED_POS         = 0.0345f;
    /****************************************/
    /****************************************/
 
@@ -117,10 +118,8 @@ namespace argos {
                                               LED_RING_RADIUS,
                                               LED_RING_START_ANGLE,
                                               8,
-                                              m_pcEmbodiedEntity->GetOriginAnchor(),
                                               CVector3(0.0f, 0.0f, GREEN_LED_ELEVATION),
-                                              m_pcEmbodiedEntity->GetOriginAnchor(),
-                                              CVector3(BODY_RADIUS, -0.009f, RED_LED_ELEVATION),
+                                              CVector3(RED_LED_POS, RED_LED_SIDE, RED_LED_ELEVATION),
                                               m_pcEmbodiedEntity->GetOriginAnchor());
          /* Proximity sensor equipped entity */
          m_pcProximitySensorEquippedEntity = new CProximitySensorEquippedEntity(this, "proximity_0");
@@ -190,10 +189,6 @@ namespace argos {
                                                         CVector3(0.0f, 0.0f, RAB_ELEVATION));
          AddComponent(*m_pcRABEquippedEntity);
          /* Perspective camera equipped entity */
-//         CQuaternion cPerspCamOrient(CRadians::ZERO, CVector3::Y);
-//         SAnchor& cPerspCamAnchor = m_pcEmbodiedEntity->AddAnchor("perspective_camera",
-//                                                                  CVector3(0.03, 0.0, 0.07f),
-//                                                                  cPerspCamOrient);
          m_pcEmbodiedEntity->EnableAnchor("perspective_camera");
          m_pcPerspectiveCameraEquippedEntity = new CEPuck2CameraEquippedEntity(this,
                                                                                     "perspective_camera_0",
@@ -202,7 +197,6 @@ namespace argos {
                                                                                     f_perspcam_range,
                                                                                     160, 120,
                                                                                     m_pcEmbodiedEntity->GetOriginAnchor());
-                                                                                    //cPerspCamAnchor);
          AddComponent(*m_pcPerspectiveCameraEquippedEntity);
          /* Battery equipped entity */
          m_pcBatteryEquippedEntity = new CEPuck2BatteryEquippedEntity(this, "battery_0", str_bat_model);
@@ -248,10 +242,8 @@ namespace argos {
                                               LED_RING_RADIUS,
                                               LED_RING_START_ANGLE,
                                               8,
-                                              m_pcEmbodiedEntity->GetOriginAnchor(),
                                               CVector3(0.0f, 0.0f, GREEN_LED_ELEVATION),
-                                              m_pcEmbodiedEntity->GetOriginAnchor(),
-                                              CVector3(BODY_RADIUS, -0.009f, RED_LED_ELEVATION),
+                                              CVector3(RED_LED_POS, RED_LED_SIDE, RED_LED_ELEVATION),
                                               m_pcEmbodiedEntity->GetOriginAnchor());
          /* Proximity sensor equipped entity */
          m_pcProximitySensorEquippedEntity = new CProximitySensorEquippedEntity(this, "proximity_0");
@@ -326,14 +318,6 @@ namespace argos {
          Real fPerspCamFocalLength = 0.035;
          Real fPerspCamRange = 1.0;
          CDegrees cAperture(20.0f);
-//         CQuaternion cPerspCamOrient(CRadians::ZERO, CVector3::Y);
-//         SAnchor& cPerspCamAnchor = m_pcEmbodiedEntity->AddAnchor("perspective_camera",
-//                                                                  CVector3(0.03, 0.0, 0.07f),
-//                                                                  cPerspCamOrient);  // Camera doesn't move with this Anchor
-//                                                                                     // possible solution if the latest version won't fix it
-//                                                                                     // is to define my own camera with the offset included in it
-//                                                                                     // and use OriginAnchor instead
-         //m_pcEmbodiedEntity->EnableAnchor("perspective_camera");
          m_pcPerspectiveCameraEquippedEntity = new CEPuck2CameraEquippedEntity(this,
                                                                                     "perspective_camera_0",
                                                                                     ToRadians(cAperture),
@@ -341,7 +325,6 @@ namespace argos {
                                                                                     fPerspCamRange,
                                                                                     160, 120,
                                                                                     m_pcEmbodiedEntity->GetOriginAnchor());
-                                                                                    //cPerspCamAnchor);
          AddComponent(*m_pcPerspectiveCameraEquippedEntity);
          /* Battery equipped entity */
          m_pcBatteryEquippedEntity = new CEPuck2BatteryEquippedEntity(this, "battery_0");

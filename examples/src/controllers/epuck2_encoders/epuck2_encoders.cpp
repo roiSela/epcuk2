@@ -15,7 +15,7 @@
 /****************************************/
 /****************************************/
 
-CCI_EPuck2Encoders::CCI_EPuck2Encoders() :
+CCI_EPuck2Tof::CCI_EPuck2Tof() :
    m_pcWheels(NULL),
    m_pcEncoderSensor(NULL),
    m_pcTOFSensor(NULL),
@@ -28,7 +28,7 @@ CCI_EPuck2Encoders::CCI_EPuck2Encoders() :
 /****************************************/
 /****************************************/
 
-void CCI_EPuck2Encoders::Init(TConfigurationNode& t_node) {
+void CCI_EPuck2Tof::Init(TConfigurationNode& t_node) {
    m_pcWheels        = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcEncoderSensor = GetSensor  <CCI_EPuck2EncoderSensor         >("epuck2_encoder"       );
    m_pcTOFSensor     = GetSensor  <CCI_EPuck2TOFSensor             >("epuck2_tof"           );
@@ -41,7 +41,7 @@ void CCI_EPuck2Encoders::Init(TConfigurationNode& t_node) {
 /****************************************/
 /****************************************/
 
-void CCI_EPuck2Encoders::ControlStep() {
+void CCI_EPuck2Tof::ControlStep() {
 
    unsigned uTick = CSimulator::GetInstance().GetSpace().GetSimulationClock();
    std::string sId = CCI_Controller::GetId();
@@ -80,4 +80,4 @@ void CCI_EPuck2Encoders::ControlStep() {
 /****************************************/
 /****************************************/
 
-REGISTER_CONTROLLER(CCI_EPuck2Encoders, "epuck2_encoders_controller")
+REGISTER_CONTROLLER(CCI_EPuck2Tof, "epuck2_encoders_controller")

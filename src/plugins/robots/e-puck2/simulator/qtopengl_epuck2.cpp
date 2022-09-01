@@ -34,18 +34,19 @@ namespace argos {
    static const Real HALF_CHASSIS_WIDTH          = HALF_INTERWHEEL_DISTANCE - HALF_WHEEL_WIDTH;
 
    static const Real BODY_RADIUS                 = 0.035f;
-   static const Real BODY_ELEVATION              = WHEEL_DIAMETER + CHASSIS_ELEVATION; // to be checked!
-   static const Real BODY_HEIGHT                 = 0.03f;                              // to be checked!
+   static const Real BODY_ELEVATION              = WHEEL_DIAMETER; // + CHASSIS_ELEVATION; // to be checked!
+   static const Real BODY_HEIGHT                 = 0.005f;                              // to be checked!
 
    static const Real LED_ELEVATION               = BODY_ELEVATION + BODY_HEIGHT;
-   static const Real LED_HEIGHT                  = 0.01;                               // to be checked!
+   static const Real LED_HEIGHT                  = 0.005;                               // to be checked!
    static const Real LED_UPPER_RING_INNER_RADIUS = 0.8 * BODY_RADIUS;
 
    static const Real FRONT_LED_HEIGHT    = 0.005f;
-   static const Real FRONT_LED_SIDE      = 0.005f;
+   static const Real FRONT_LED_SIDE      = 0.01f;
    static const Real FRONT_LED_HALF_SIDE = FRONT_LED_SIDE * 0.5f;
-   static const Real FRONT_LED_ELEVATION = 0.07f;
-   static const Real FRONT_LED_OFFSET    = BODY_RADIUS;
+   static const Real FRONT_LED_ELEVATION = 0.032f;
+   static const Real FRONT_LED_OFFSET    = HALF_CHASSIS_LENGTH;
+   static const Real FRONT_LED_DEV       = -0.003f;
 
    /****************************************/
    /****************************************/
@@ -360,21 +361,21 @@ namespace argos {
     void CQTOpenGLEPuck2::RenderFrontLED() {
       glBegin(GL_TRIANGLES);
       /* Top */
-      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f, FRONT_LED_ELEVATION                        );
-      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
-      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
+      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f + FRONT_LED_DEV, FRONT_LED_ELEVATION                        );
+      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
+      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
       /* Bottom */
-      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f, FRONT_LED_ELEVATION                        );
-      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
-      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
+      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f + FRONT_LED_DEV, FRONT_LED_ELEVATION                        );
+      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
+      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
       /* Left */
-      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f, FRONT_LED_ELEVATION                        );
-      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
-      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
+      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f + FRONT_LED_DEV, FRONT_LED_ELEVATION                        );
+      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
+      glVertex3f(                   FRONT_LED_OFFSET,  FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
       /* Right */
-      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f, FRONT_LED_ELEVATION                        );
-      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
-      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
+      glVertex3f(FRONT_LED_HEIGHT + FRONT_LED_OFFSET,                 0.0f + FRONT_LED_DEV, FRONT_LED_ELEVATION                        );
+      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION + FRONT_LED_HALF_SIDE);
+      glVertex3f(                   FRONT_LED_OFFSET, -FRONT_LED_HALF_SIDE + FRONT_LED_DEV, FRONT_LED_ELEVATION - FRONT_LED_HALF_SIDE);
       glEnd();
    }
 

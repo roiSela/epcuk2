@@ -192,7 +192,9 @@ namespace argos {
    /****************************************/
 
    void CCI_EPuck2LEDsActuator::SetBodyLed(const bool b_state) {
-       m_tSettings[9] = b_state ? CColor::GREEN : CColor::BLACK;
+      for (UInt32 i = 9; i < m_tSettings.size(); ++i) {
+         m_tSettings[i] = b_state ? CColor::GREEN : CColor::BLACK;
+      }
    }
 
    /****************************************/

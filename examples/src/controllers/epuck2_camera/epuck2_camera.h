@@ -13,6 +13,7 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
 #include <argos3/plugins/robots/e-puck2/control_interface/ci_epuck2_tof_sensor.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_colored_blob_perspective_camera_sensor.h>
+#include <argos3/plugins/robots/e-puck2/control_interface/ci_epuck2_leds_actuator.h>
 
 using namespace argos;
 
@@ -36,6 +37,7 @@ private:
 
    CCI_DifferentialSteeringActuator* m_pcWheels;
    CCI_ColoredBlobPerspectiveCameraSensor* m_pcCamera;
+   CCI_EPuck2LEDsActuator* m_pcLedAct;
    Real m_fWheelVelocity;
 
 };

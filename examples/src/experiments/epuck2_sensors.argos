@@ -23,8 +23,8 @@
         <epuck2_leds implementation="default" medium="leds" />
       </actuators>
       <sensors>
-        <epuck2_proximity implementation="default" show_rays="false" />
-        <epuck2_tof implementation="default" show_rays="false" />
+        <epuck2_proximity implementation="default" show_rays="true" />
+        <epuck2_tof implementation="default" show_rays="true" />
         <epuck2_ground implementation="rot_z_only" />
         <epuck2_light implementation="default" show_rays="false"/>
         <epuck2_encoder implementation="default" />
