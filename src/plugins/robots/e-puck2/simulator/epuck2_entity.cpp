@@ -38,7 +38,7 @@ namespace argos {
 
    static const Real PROXIMITY_SENSOR_RING_ELEVATION       = 0.043f;
    static const Real PROXIMITY_SENSOR_RING_RADIUS          = BODY_RADIUS+0.001f;
-   static const Real PROXIMITY_SENSOR_RING_RANGE           = 0.06f;
+   static const Real PROXIMITY_SENSOR_RING_RANGE           = 0.05f;
    static const Real LIGHT_SENSOR_RING_RANGE               = 0.10f;
 
    static const CRadians LED_RING_START_ANGLE   = CRadians::ZERO; // CRadians((ARGOS_PI / 8.0f) * 0.5f);
@@ -317,7 +317,7 @@ namespace argos {
          /* Perspective camera equipped entity */
          Real fPerspCamFocalLength = 0.035;
          Real fPerspCamRange = 1.0;
-         CDegrees cAperture(20.0f);
+         CDegrees cAperture(18.5f);
          m_pcPerspectiveCameraEquippedEntity = new CEPuck2CameraEquippedEntity(this,
                                                                                     "perspective_camera_0",
                                                                                     ToRadians(cAperture),

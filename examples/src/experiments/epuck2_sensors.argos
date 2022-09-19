@@ -26,9 +26,9 @@
         <epuck2_proximity implementation="default" show_rays="true" />
         <epuck2_tof implementation="default" show_rays="true" />
         <epuck2_ground implementation="rot_z_only" />
-        <epuck2_light implementation="default" show_rays="false"/>
+        <epuck2_light implementation="default" show_rays="true"/>
         <epuck2_encoder implementation="default" />
-        <range_and_bearing implementation="medium" medium="rab" show_rays="false" />
+        <range_and_bearing implementation="medium" medium="rab" show_rays="true" />
         <epuck2_colored_blob_perspective_camera implementation="default" medium="leds" show_rays="true" />
         <epuck2_battery implementation="default"/>
       </sensors>

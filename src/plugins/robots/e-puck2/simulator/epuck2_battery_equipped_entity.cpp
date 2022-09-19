@@ -21,7 +21,7 @@ namespace argos {
       m_fFullCharge(1.0),
       m_fAvailableCharge(m_fFullCharge),
       m_pcDischargeModel(nullptr) {
-      SetDischargeModel(new CEPuck2BatteryDischargeModelTimeMotion());
+      SetDischargeModel(new CEPuck2BatteryDischargeModelSimple());
       Disable();
    }
 
@@ -72,8 +72,8 @@ namespace argos {
       try {
          CEntity::Init(t_tree);
          /* Get initial battery level */
-         std::string strDischargeModel = "time_motion";
-         //GetNodeAttributeOrDefault(t_tree, "discharge_model", strDischargeModel, strDischargeModel);
+         std::string strDischargeModel = "simple";
+         GetNodeAttributeOrDefault(t_tree, "discharge_model", strDischargeModel, strDischargeModel);
          SetDischargeModel(strDischargeModel);
          m_pcDischargeModel->Init(t_tree);
          /* Get initial battery charge */
@@ -145,17 +145,13 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-
-
-   void CEPuck2BatteryDischargeModelTimeMotion::Init(TConfigurationNode& t_tree) {
-      //GetNodeAttributeOrDefault(t_tree, "time_factor", m_fDelta, m_fDelta);
-      //GetNodeAttributeOrDefault(t_tree, "pos_factor", m_fPosFactor, m_fPosFactor);
+   void CEPuck2BatteryDischargeModelCubic::Init(TConfigurationNode& t_tree) {
    }
 
    /****************************************/
    /****************************************/
 
-   void CEPuck2BatteryDischargeModelTimeMotion::SetBattery(CEPuck2BatteryEquippedEntity* pc_battery) {
+   void CEPuck2BatteryDischargeModelCubic::SetBattery(CEPuck2BatteryEquippedEntity* pc_battery) {
       try {
          /* Execute default logic */
          CEPuck2BatteryDischargeModel::SetBattery(pc_battery);
@@ -179,7 +175,7 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   Real CEPuck2BatteryDischargeModelTimeMotion::FindX(const Real f_charge) {
+   Real CEPuck2BatteryDischargeModelCubic::FindX(const Real f_charge) {
       Real f_error = 9e9;
       int i = 0;
       Real f_min = 0;
@@ -199,7 +195,7 @@ namespace argos {
       return f_mid;
    }
 
-   Real CEPuck2BatteryDischargeModelTimeMotion::Delta(const Real f_charge, const Real f_delta) {
+   Real CEPuck2BatteryDischargeModelCubic::Delta(const Real f_charge, const Real f_delta) {
 
       Real x = FindX(f_charge);
       return Eval(Px, x + f_delta);
@@ -208,7 +204,7 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   void CEPuck2BatteryDischargeModelTimeMotion::operator()() {
+   void CEPuck2BatteryDischargeModelCubic::operator()() {
       if(m_pcBattery->GetAvailableCharge() > 0.0) {
          /* Calculate delta position */
          Real fDeltaPos = Distance(m_psAnchor->Position,
@@ -245,12 +241,162 @@ namespace argos {
          m_cOldOrientation = m_psAnchor->Orientation;
       }
    }
+
+   /****************************************/
+   /****************************************/
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelLinear::Init(TConfigurationNode& t_tree) {
+   }
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelLinear::SetBattery(CEPuck2BatteryEquippedEntity* pc_battery) {
+      try {
+         /* Execute default logic */
+         CEPuck2BatteryDischargeModel::SetBattery(pc_battery);
+         /* Get a hold of the body and anchor of the entity that contains the battery */
+         CEntity* pcRoot = &pc_battery->GetRootEntity();
+         auto* cComp = dynamic_cast<CComposableEntity*>(pcRoot);
+         if(cComp != nullptr) {
+            auto& cBody = cComp->GetComponent<CEmbodiedEntity>("body");
+            m_psAnchor = &cBody.GetOriginAnchor();
+            m_cOldPosition = m_psAnchor->Position;
+         }
+         else {
+            THROW_ARGOSEXCEPTION("Root entity is not composable");
+         }
+      }
+      catch(CARGoSException& ex) {
+         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"time_motion\"", ex);
+      }
+   }
+
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelLinear::operator()() {
+      if(m_pcBattery->GetAvailableCharge() > 0.0) {
+         /* Calculate delta position */
+         Real fDeltaPos = Distance(m_psAnchor->Position,
+                                   m_cOldPosition);
+         /* Calculate delta orientation */
+         CQuaternion cDeltaOrient =
+            m_cOldOrientation.Inverse() *
+            m_psAnchor->Orientation;
+         CRadians cDeltaAngle;
+         CVector3 cDeltaAxis;
+         cDeltaOrient.ToAngleAxis(cDeltaAngle, cDeltaAxis);
+         /* Calculate new level */
+         if (fDeltaPos == 0.0) {
+            if (cDeltaAngle.GetValue() != 0.0) {
+               fDeltaPos = cDeltaAngle.GetValue() * 0.0265f;
+            }
+         }
+         Real fDeltaT = CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
+         Real fSpeed = fDeltaPos / fDeltaT;
+         int spdL = floor(fSpeed);
+         int spdH = ceil(fSpeed);
+
+         if (spdL == spdH) {
+            // matching function
+         } else {
+            // interpolation required
+         }
+
+         /* Calculate new level */
+         m_pcBattery->SetAvailableCharge(
+            Max<Real>(
+               0.0,
+               m_pcBattery->GetAvailableCharge() -
+               m_fDelta -
+               m_fPosFactor * fDeltaPos));
+         /* Save position for next step */
+         m_cOldPosition = m_psAnchor->Position;
+         m_cOldOrientation = m_psAnchor->Orientation;
+      }
+   }
+
+   /****************************************/
+   /****************************************/
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelSimple::Init(TConfigurationNode& t_tree) {
+   }
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelSimple::SetBattery(CEPuck2BatteryEquippedEntity* pc_battery) {
+      try {
+         /* Execute default logic */
+         CEPuck2BatteryDischargeModel::SetBattery(pc_battery);
+         /* Get a hold of the body and anchor of the entity that contains the battery */
+         CEntity* pcRoot = &pc_battery->GetRootEntity();
+         auto* cComp = dynamic_cast<CComposableEntity*>(pcRoot);
+         if(cComp != nullptr) {
+            auto& cBody = cComp->GetComponent<CEmbodiedEntity>("body");
+            m_psAnchor = &cBody.GetOriginAnchor();
+            m_cOldPosition = m_psAnchor->Position;
+         }
+         else {
+            THROW_ARGOSEXCEPTION("Root entity is not composable");
+         }
+      }
+      catch(CARGoSException& ex) {
+         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"time_motion\"", ex);
+      }
+   }
+
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelSimple::operator()() {
+      if(m_pcBattery->GetAvailableCharge() > 0.0) {
+         /* Calculate delta position */
+         Real fDeltaPos = Distance(m_psAnchor->Position,
+                                   m_cOldPosition);
+         /* Calculate delta orientation */
+         CQuaternion cDeltaOrient =
+            m_cOldOrientation.Inverse() *
+            m_psAnchor->Orientation;
+         CRadians cDeltaAngle;
+         CVector3 cDeltaAxis;
+         cDeltaOrient.ToAngleAxis(cDeltaAngle, cDeltaAxis);
+         /* Calculate new level */
+         if (fDeltaPos == 0.0) {
+            if (cDeltaAngle.GetValue() != 0.0) {
+               fDeltaPos = cDeltaAngle.GetValue() * 0.0265f;
+            }
+         }
+         /* Calculate new level */
+         m_pcBattery->SetAvailableCharge(
+            Max<Real>(
+               0.0,
+               m_pcBattery->GetAvailableCharge() -
+               m_fDelta -
+               m_fPosFactor * fDeltaPos));
+         /* Save position for next step */
+         m_cOldPosition = m_psAnchor->Position;
+         m_cOldOrientation = m_psAnchor->Orientation;
+      }
+   }
+
    
    /****************************************/
    /****************************************/
 
    REGISTER_STANDARD_SPACE_OPERATIONS_ON_ENTITY(CEPuck2BatteryEquippedEntity);
-   REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelTimeMotion, "time_motion");
+   REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelCubic, "cubic");
+   REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelLinear, "linear");
+   REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelSimple, "simple");
 
    /****************************************/
    /****************************************/

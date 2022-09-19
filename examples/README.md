@@ -32,5 +32,5 @@ argos3 -c src/experiments/epuck2_camera.argos
 
 ## Example ENCODERS
 ```shell
-argos3 -c src/experiments/epuck2_encodes.argos
+argos3 -c src/experiments/epuck2_encoders.argos
 ```

@@ -43,14 +43,8 @@ void CEPuck2Camera::ControlStep() {
 
    unsigned uTick = (&CSimulator::GetInstance())->GetSpace().GetSimulationClock();
    std::string sId = CCI_Controller::GetId();
-   // LOG << sId << std::fixed << std::setprecision(1) << std::endl;
    if (atoi(sId.c_str()) <= 0) {
       m_pcLedAct->SetRedLed1(true);
-//      m_pcLedAct->SetFrontLed(true);
-//      m_pcLedAct->SetBodyLed(true);
-//      m_pcLedAct->SetAllRedLeds(true);
-//      m_pcLedAct->SetAllRGBColors(CColor::WHITE);
-//      m_pcWheels->SetLinearVelocity(-0.25, 0.25);
    } else {
 
       CRadians cZAngle, cYAngle, cXAngle;
@@ -67,9 +61,10 @@ void CEPuck2Camera::ControlStep() {
           CCI_ColoredBlobPerspectiveCameraSensor::SBlob* sBlob = sReadings.BlobList[i];
          LOG << "...(Color = " << sBlob->Color << ", X = " << sBlob->X << ",Y = " << sBlob->Y << ")" << std::endl;
       }
-
-      /* Movement */
-      m_pcWheels->SetLinearVelocity(m_fWheelVelocity, -m_fWheelVelocity);
+      if (uTick > 50) {
+         /* Movement */
+         m_pcWheels->SetLinearVelocity(m_fWheelVelocity, -m_fWheelVelocity);
+      }
    }
 }
 

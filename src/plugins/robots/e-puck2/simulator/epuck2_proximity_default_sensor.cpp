@@ -139,13 +139,9 @@ namespace argos {
 
    Real CEPuck2ProximityDefaultSensor::CalculateReading(Real f_distance)
    {
-      //return Exp(-f_distance);
-
-      // from the e-puck model by Lorenzo Garattoni and Gianpiero Francesca
       Real value = 0.0f;
-      if(f_distance <= 0.05) // less than 5cm - the IR readings drop pretty fast
-      {
-          value = 298.701f * pow(f_distance,2) - 36.8961f * f_distance + 1.08212f;
+      if(f_distance <= 0.05) {
+          value = 197.8633 * pow(f_distance,2) - 30.47182f * f_distance + 1.011635f;
       }
       CRange<Real>(0.0f,1.0f).TruncValue(value);
       return value;

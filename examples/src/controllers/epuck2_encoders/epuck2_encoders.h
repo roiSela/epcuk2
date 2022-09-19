@@ -17,13 +17,13 @@
 
 using namespace argos;
 
-class CCI_EPuck2Tof : public CCI_Controller {
+class CCI_EPuck2Light : public CCI_Controller {
 
 public:
 
-   CCI_EPuck2Tof();
+   CCI_EPuck2Light();
 
-   virtual ~CCI_EPuck2Tof() {}
+   virtual ~CCI_EPuck2Light() {}
 
    virtual void Init(TConfigurationNode& t_node);
 

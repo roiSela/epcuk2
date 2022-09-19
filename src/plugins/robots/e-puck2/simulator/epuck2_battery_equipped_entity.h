@@ -157,17 +157,13 @@ namespace argos {
                    "undefined")
    
    /**
-    * A battery discharge model in which the charge decreases with both time and motion.
-    *
-    * In this model, the charge is calculated as follows:
-    *
-    * new charge = old charge - delta - pos_factor * (delta position)
+    * A cubic battery discharge model
     */
-   class CEPuck2BatteryDischargeModelTimeMotion : public CEPuck2BatteryDischargeModel {
+   class CEPuck2BatteryDischargeModelCubic : public CEPuck2BatteryDischargeModel {
       
    public:
       
-      CEPuck2BatteryDischargeModelTimeMotion() :
+      CEPuck2BatteryDischargeModelCubic() :
          m_psAnchor(NULL) {}
 
       virtual void Init(TConfigurationNode& t_tree);
@@ -189,10 +185,76 @@ namespace argos {
       const SAnchor* m_psAnchor;
       CVector3 m_cOldPosition;
       CQuaternion m_cOldOrientation;
+
    };
 
    /****************************************/
    /****************************************/
+
+   /**
+    * A linearised battery discharge model
+    */
+   class CEPuck2BatteryDischargeModelLinear : public CEPuck2BatteryDischargeModel {
+
+   public:
+
+      CEPuck2BatteryDischargeModelLinear() :
+         m_psAnchor(NULL),
+         m_fDelta(1e-5),
+         m_fPosFactor(1e-3) {}
+
+      virtual void Init(TConfigurationNode& t_tree);
+
+      virtual void SetBattery(CEPuck2BatteryEquippedEntity* pc_battery);
+
+      virtual void operator()();
+
+   protected:
+
+      const SAnchor* m_psAnchor;
+      CVector3 m_cOldPosition;
+      CQuaternion m_cOldOrientation;
+      Real m_fDelta;
+      Real m_fPosFactor;
+   private:
+      Real M[16][6]; // x1, x2, y1, y2, h, m
+   };
+
+   /****************************************/
+   /****************************************/
+
+
+   /**
+    * A simplified battery discharge model
+    */
+   class CEPuck2BatteryDischargeModelSimple : public CEPuck2BatteryDischargeModel {
+
+   public:
+
+      CEPuck2BatteryDischargeModelSimple() :
+         m_psAnchor(NULL),
+         m_fDelta(1e-5),
+         m_fPosFactor(1e-3) {}
+
+      virtual void Init(TConfigurationNode& t_tree);
+
+      virtual void SetBattery(CEPuck2BatteryEquippedEntity* pc_battery);
+
+      virtual void operator()();
+
+   protected:
+
+      const SAnchor* m_psAnchor;
+      CVector3 m_cOldPosition;
+      CQuaternion m_cOldOrientation;
+      Real m_fDelta;
+      Real m_fPosFactor;
+
+   };
+
+   /****************************************/
+   /****************************************/
+
    
 }
 

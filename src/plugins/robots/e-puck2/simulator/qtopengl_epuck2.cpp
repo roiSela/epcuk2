@@ -48,6 +48,8 @@ namespace argos {
    static const Real FRONT_LED_OFFSET    = HALF_CHASSIS_LENGTH;
    static const Real FRONT_LED_DEV       = -0.003f;
 
+   static const Real ARROW_OFFSET = 0.0025f;
+
    /****************************************/
    /****************************************/
 
@@ -350,9 +352,9 @@ namespace argos {
       /* Triangle to set the direction */
       SetLEDMaterial(1.0f, 1.0f, 0.0f);
       glBegin(GL_TRIANGLES);
-      glVertex3f( BODY_RADIUS * 0.7,               0.0f, BODY_ELEVATION + BODY_HEIGHT + LED_HEIGHT + 0.001f);
-      glVertex3f(-BODY_RADIUS * 0.7,  BODY_RADIUS * 0.3, BODY_ELEVATION + BODY_HEIGHT + LED_HEIGHT + 0.001f);
-      glVertex3f(-BODY_RADIUS * 0.7, -BODY_RADIUS * 0.3, BODY_ELEVATION + BODY_HEIGHT + LED_HEIGHT + 0.001f);
+      glVertex3f(ARROW_OFFSET + BODY_RADIUS * 0.5,               0.0f, BODY_ELEVATION + BODY_HEIGHT + LED_HEIGHT + 0.001f);
+      glVertex3f(ARROW_OFFSET - BODY_RADIUS * 0.5,  BODY_RADIUS * 0.2, BODY_ELEVATION + BODY_HEIGHT + LED_HEIGHT + 0.001f);
+      glVertex3f(ARROW_OFFSET - BODY_RADIUS * 0.5, -BODY_RADIUS * 0.2, BODY_ELEVATION + BODY_HEIGHT + LED_HEIGHT + 0.001f);
       glEnd();
    }
 

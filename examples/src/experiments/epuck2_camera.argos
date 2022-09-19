@@ -24,7 +24,7 @@
       <sensors>
         <epuck2_colored_blob_perspective_camera implementation="default" medium="leds" show_rays="true" />
       </sensors>
-      <params velocity="0.0" />
+      <params velocity="1" />
     </epuck2_camera_controller>
 
   </controllers>
@@ -58,19 +58,19 @@
          <controller config="fdc" />
       </e-puck2>
 <!--       <e-puck2 id="-1" > -->
-<!--          <body position="0.17735,0.05085,0" orientation="190,0,0" /> -->
+<!--          <body position="0.18,0.0385,0" orientation="180,0,0" /> -->
 <!--          <controller config="fdc" /> -->
 <!--       </e-puck2> -->
 <!--       <e-puck2 id="-2" > -->
-<!--          <body position="0.17735,-0.05085,0" orientation="170,0,0" /> -->
-<!--          <controller config="fdc" /> -->
-<!--       </e-puck2> -->
+<!--          <body position="0.18,-0.03825,0" orientation="180,0,0" /> -->
+<!--           <controller config="fdc" /> -->
+<!--        </e-puck2> -->
       <e-puck2 id="-1" >
-         <body position="0.2775,0.0765,0" orientation="190,0,0" />
+         <body position="0.3,0.071,0" orientation="180,0,0" />
          <controller config="fdc" />
       </e-puck2>
       <e-puck2 id="-2" >
-         <body position="0.2775,-0.0765,0" orientation="170,0,0" />
+         <body position="0.3,-0.070,0" orientation="180,0,0" />
          <controller config="fdc" />
       </e-puck2>
    </arena>

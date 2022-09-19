@@ -230,7 +230,7 @@ namespace argos {
                    "It is possible to add uniform noise to the sensors, thus matching the\n"
                    "characteristics of a real robot better. This can be done with the attribute\n"
                    "\"noise_level\", whose allowed range is in [-1,1] and is added to the calculated\n"
-                   "reading. The final sensor reading is always normalized in the [0-1] range.\n\n"
+                   "reading. The final sensor reading is always normalized in the [0-4095] range.\n\n"
 
                    "  <controllers>\n"
                    "    ...\n"
