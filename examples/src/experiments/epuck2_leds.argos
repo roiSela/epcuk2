@@ -59,12 +59,12 @@
    <!-- ****************** -->
    <visualization>
       <qt-opengl>
-	   	<camera>
-		  	<placements>
-            	<placement index="0" position="0.240128,0.00687284,0.222093" look_at="-0.53029,0.0114345,-0.415429" up="-0.637512,0.00377468,0.770432" lens_focal_length="65" />  
-		  	</placements>
-		</camera>
-     </qt-opengl>
+         <camera>
+            <placements>
+               <placement index="0" position="0.240128,0.00687284,0.222093" look_at="-0.53029,0.0114345,-0.415429" up="-0.637512,0.00377468,0.770432" lens_focal_length="65" />
+            </placements>
+         </camera>
+      </qt-opengl>
    </visualization>
 
 </argos-configuration>

@@ -78,8 +78,6 @@ namespace argos {
          m_pcDischargeModel->Init(t_tree);
          /* Get initial battery charge */
          GetNodeAttributeOrDefault(t_tree, "start_charge",  m_fAvailableCharge,  m_fAvailableCharge);
-         /* Get full battery charge */
-         //GetNodeAttributeOrDefault(t_tree, "full_charge",   m_fFullCharge,       m_fFullCharge);
       }
       catch(CARGoSException& ex) {
          THROW_ARGOSEXCEPTION_NESTED("Error initializing the battery sensor equipped entity \"" << GetId() << "\"", ex);
@@ -168,38 +166,18 @@ namespace argos {
          }
       }
       catch(CARGoSException& ex) {
-         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"time_motion\"", ex);
+         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"cubic\"", ex);
       }
    }
 
-   /****************************************/
-   /****************************************/
-
-   Real CEPuck2BatteryDischargeModelCubic::FindX(const Real f_charge) {
-      Real f_error = 9e9;
-      int i = 0;
-      Real f_min = 0;
-      Real f_max = MAX_X;
-      Real f_mid = 0;
-      while (f_error > 0.000001 && i < 50) {
-         f_mid = f_min + (f_max - f_min) / 2.0;
-         f_error = f_charge - Eval(Px, f_mid);
-         if (f_error < 0) {
-            f_min = f_mid;
-            f_error = -f_error;
-         } else {
-            f_max = f_mid;
-         }
-         i++;
-      }
-      return f_mid;
+   Real CEPuck2BatteryDischargeModelCubic::CubicRoot(const Real a, const Real b, const Real c, const Real d, const Real y) {
+     Real new_d = d - y;
+     Real d0 = b*b - 3*a*c;
+     Real d1 = 2*b*b*b - 9*a*b*c + 27*a*a*new_d;
+     Real C = std::cbrt((d1 + sqrt(d1*d1 - 4*d0*d0*d0)) / 2);
+     return (-1/(3*a) * (b + C + d0/C));
    }
 
-   Real CEPuck2BatteryDischargeModelCubic::Delta(const Real f_charge, const Real f_delta) {
-
-      Real x = FindX(f_charge);
-      return Eval(Px, x + f_delta);
-   }
 
    /****************************************/
    /****************************************/
@@ -222,20 +200,170 @@ namespace argos {
                fDeltaPos = cDeltaAngle.GetValue() * 0.0265f;
             }
          }
+         Real fDeltaT = CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
+         Real fSpeed = std::round(std::max(0.0, std::min(0.150, fDeltaPos / fDeltaT)) * 10000.0) / 100.0; // cm/s
+         Real fBat = m_pcBattery->GetAvailableCharge();
 
-         Real f_delta_d = DELTA_D3;
-         if (m_pcBattery->GetAvailableCharge() > TH1) {
-            f_delta_d = DELTA_D1;
-         } else if (m_pcBattery->GetAvailableCharge() > TH2) {
-            f_delta_d = DELTA_D2;
+         // First interpolation point: LOW
+         int spdL = std::min(15.0, floor(fSpeed));
+         Real a1 = Q[spdL][3];
+         Real b1 = Q[spdL][2];
+         Real c1 = Q[spdL][1];
+         Real d1 = Q[spdL][0];
+         Real e1 = Q[spdL][4];
+         Real x1 = std::max(0.0, CubicRoot(a1, b1, c1, d1, fBat));
+         Real y1;
+         if (x1 >= e1) {
+            y1 = 0.0;
+         } else {
+            x1 += fDeltaT;
+            y1 = a1*x1*x1*x1 + b1*x1*x1 + c1*x1 + d1;
          }
-         m_pcBattery->SetAvailableCharge(
-            Max<Real>(
-               0.0,
-               m_pcBattery->GetAvailableCharge() -
-               DELTA_S * CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick() -
-               f_delta_d * fDeltaPos));
 
+         int spdH = std::max(0.0, ceil(fSpeed));
+
+         if (spdL == spdH) {
+            m_pcBattery->SetAvailableCharge(Max<Real>(0.0, y1));
+         } else {
+            // Second interpolation point
+            Real a2 = Q[spdH][3];
+            Real b2 = Q[spdH][2];
+            Real c2 = Q[spdH][1];
+            Real d2 = Q[spdH][0];
+            Real e2 = Q[spdH][4];
+            Real x2 = std::max(0.0, CubicRoot(a2, b2, c2, d2, fBat));
+            Real y2;
+            if (x2 >= e2) {
+               y2 = 0.0;
+            } else {
+               x2 += fDeltaT;
+               y2 = a2*x2*x2*x2 + b2*x2*x2 + c2*x2 + d2;
+            }
+
+            Real d = (fSpeed - spdL) / (spdH - spdL);
+            if (y1 < y2) {
+               m_pcBattery->SetAvailableCharge(Max<Real>(0.0, y1 + (y2 - y1) * d));
+            } else {
+               m_pcBattery->SetAvailableCharge(Max<Real>(0.0, y2 + (y1 - y2) * d));
+            }
+         }
+
+         /* Save position for next step */
+         m_cOldPosition = m_psAnchor->Position;
+         m_cOldOrientation = m_psAnchor->Orientation;
+      }
+   }
+
+   /****************************************/
+   /****************************************/
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelApprox::Init(TConfigurationNode& t_tree) {
+   }
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelApprox::SetBattery(CEPuck2BatteryEquippedEntity* pc_battery) {
+      try {
+         /* Execute default logic */
+         CEPuck2BatteryDischargeModel::SetBattery(pc_battery);
+         /* Get a hold of the body and anchor of the entity that contains the battery */
+         CEntity* pcRoot = &pc_battery->GetRootEntity();
+         auto* cComp = dynamic_cast<CComposableEntity*>(pcRoot);
+         if(cComp != nullptr) {
+            auto& cBody = cComp->GetComponent<CEmbodiedEntity>("body");
+            m_psAnchor = &cBody.GetOriginAnchor();
+            m_cOldPosition = m_psAnchor->Position;
+         }
+         else {
+            THROW_ARGOSEXCEPTION("Root entity is not composable");
+         }
+      }
+      catch(CARGoSException& ex) {
+         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"approx\"", ex);
+      }
+   }
+
+
+   /****************************************/
+   /****************************************/
+
+   void CEPuck2BatteryDischargeModelApprox::operator()() {
+      if(m_pcBattery->GetAvailableCharge() > 0.0) {
+         /* Calculate delta position */
+         Real fDeltaPos = Distance(m_psAnchor->Position,
+                                   m_cOldPosition);
+         /* Calculate delta orientation */
+         CQuaternion cDeltaOrient =
+            m_cOldOrientation.Inverse() *
+            m_psAnchor->Orientation;
+         CRadians cDeltaAngle;
+         CVector3 cDeltaAxis;
+         cDeltaOrient.ToAngleAxis(cDeltaAngle, cDeltaAxis);
+         /* Calculate new level */
+         if (fDeltaPos == 0.0) {
+            if (cDeltaAngle.GetValue() != 0.0) {
+               fDeltaPos = cDeltaAngle.GetValue() * 0.0265f;
+            }
+         }
+         Real fDeltaT = CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
+         Real fSpeed = std::round(std::max(0.0, std::min(0.150, fDeltaPos / fDeltaT)) * 10000.0) / 100.0; // cm/s
+         Real fBat = m_pcBattery->GetAvailableCharge();
+
+         int spdL = std::max(0.0, floor(fSpeed));
+         int spdH = std::min(15.0, ceil(fSpeed));
+
+         // First interpolation point: LOW
+         Real m1, h1;
+         if (fBat <= M1[spdL][4] && fBat >= M1[spdL][5]) {
+            h1 = M1[spdL][0];
+            m1 = M1[spdL][1];
+         } else if (fBat <= M2[spdL][4] && fBat >= M2[spdL][5]) {
+            h1 = M2[spdL][0];
+            m1 = M2[spdL][1];
+         } else if (fBat <= M3[spdL][4] && fBat >= M3[spdL][5]) {
+            h1 = M3[spdL][0];
+            m1 = M3[spdL][1];
+         } else {
+            h1 = M4[spdL][0];
+            m1 = M4[spdL][1];
+         }
+
+         Real x1 = (fBat - h1) / m1;
+         Real y1 = m1 * (x1 + fDeltaT) + h1;
+
+         if (spdL == spdH) {
+            m_pcBattery->SetAvailableCharge(Max<Real>(0.0, y1));
+         } else {
+            // Second interpolation point: RIGHT
+            Real m2, h2;
+            if (fBat <= M1[spdH][4] && fBat >= M1[spdH][5]) {
+               h2 = M1[spdH][0];
+               m2 = M1[spdH][1];
+            } else if (fBat <= M2[spdH][4] && fBat >= M2[spdH][5]) {
+               h2 = M2[spdH][0];
+               m2 = M2[spdH][1];
+            } else if (fBat <= M3[spdH][4] && fBat >= M3[spdH][5]) {
+               h2 = M3[spdH][0];
+               m2 = M3[spdH][1];
+            } else {
+               h2 = M4[spdH][0];
+               m2 = M4[spdH][1];
+            }
+
+            Real x2 = (fBat - h2) / m2;
+            Real y2 = m2 * (x2 + fDeltaT) + h2;
+
+            Real d = (fSpeed - spdL) / (spdH - spdL);
+            if (y1 < y2) {
+               m_pcBattery->SetAvailableCharge(Max<Real>(0.0, y1 + (y2 - y1) * d));
+            } else {
+               m_pcBattery->SetAvailableCharge(Max<Real>(0.0, y2 + (y1 - y2) * d));
+            }
+         }
          /* Save position for next step */
          m_cOldPosition = m_psAnchor->Position;
          m_cOldOrientation = m_psAnchor->Orientation;
@@ -271,7 +399,7 @@ namespace argos {
          }
       }
       catch(CARGoSException& ex) {
-         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"time_motion\"", ex);
+         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"linear\"", ex);
       }
    }
 
@@ -298,23 +426,38 @@ namespace argos {
             }
          }
          Real fDeltaT = CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
-         Real fSpeed = fDeltaPos / fDeltaT;
-         int spdL = floor(fSpeed);
-         int spdH = ceil(fSpeed);
+         Real fSpeed = std::round(std::max(0.0, std::min(0.150, fDeltaPos / fDeltaT)) * 10000.0) / 100.0; // cm/s
+         int spdL = std::max(0.0, floor(fSpeed));
+         int spdH = std::min(15.0, ceil(fSpeed));
 
          if (spdL == spdH) {
             // matching function
+            float m = L[spdL];
+            m_pcBattery->SetAvailableCharge(
+               Max<Real>(
+                     0.0,
+                     m_pcBattery->GetAvailableCharge() +
+                     m * fDeltaT));
          } else {
             // interpolation required
-         }
+            float mL = L[spdL];
+            float mH = L[spdH];
+            float yL = m_pcBattery->GetAvailableCharge() + mL * fDeltaT;
+            float yH = m_pcBattery->GetAvailableCharge() + mH * fDeltaT;
+            float d = (fSpeed - spdL) / (spdH - spdL);
 
-         /* Calculate new level */
-         m_pcBattery->SetAvailableCharge(
-            Max<Real>(
-               0.0,
-               m_pcBattery->GetAvailableCharge() -
-               m_fDelta -
-               m_fPosFactor * fDeltaPos));
+            if (yH < yL) {
+               m_pcBattery->SetAvailableCharge(
+                  Max<Real>(
+                        0.0,
+                        yH + (yL - yH) * d));
+            } else {
+               m_pcBattery->SetAvailableCharge(
+                  Max<Real>(
+                        0.0,
+                        yL + (yH - yL) * d));
+            }
+         }
          /* Save position for next step */
          m_cOldPosition = m_psAnchor->Position;
          m_cOldOrientation = m_psAnchor->Orientation;
@@ -350,7 +493,7 @@ namespace argos {
          }
       }
       catch(CARGoSException& ex) {
-         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"time_motion\"", ex);
+         THROW_ARGOSEXCEPTION_NESTED("While setting body for battery model \"simple\"", ex);
       }
    }
 
@@ -377,12 +520,19 @@ namespace argos {
             }
          }
          /* Calculate new level */
-         m_pcBattery->SetAvailableCharge(
-            Max<Real>(
-               0.0,
-               m_pcBattery->GetAvailableCharge() -
-               m_fDelta -
-               m_fPosFactor * fDeltaPos));
+         if (fDeltaPos == 0) {
+            m_pcBattery->SetAvailableCharge(
+               Max<Real>(
+                  0.0,
+                  m_pcBattery->GetAvailableCharge() +
+                  M0 * CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick()));
+         } else {
+            m_pcBattery->SetAvailableCharge(
+               Max<Real>(
+                  0.0,
+                  m_pcBattery->GetAvailableCharge() +
+                  M1 * CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick()));
+         }
          /* Save position for next step */
          m_cOldPosition = m_psAnchor->Position;
          m_cOldOrientation = m_psAnchor->Orientation;
@@ -395,6 +545,7 @@ namespace argos {
 
    REGISTER_STANDARD_SPACE_OPERATIONS_ON_ENTITY(CEPuck2BatteryEquippedEntity);
    REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelCubic, "cubic");
+   REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelApprox, "approx");
    REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelLinear, "linear");
    REGISTER_BATTERY_DISCHARGE_MODEL(CEPuck2BatteryDischargeModelSimple, "simple");
 

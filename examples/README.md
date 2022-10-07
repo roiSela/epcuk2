@@ -34,3 +34,8 @@ argos3 -c src/experiments/epuck2_camera.argos
 ```shell
 argos3 -c src/experiments/epuck2_encoders.argos
 ```
+
+## Example LEDS
+```shell
+argos3 -c src/experiments/epuck2_leds.argos
+```

@@ -37,7 +37,7 @@
       <e-puck2 id="1">
          <body position="0,0.5,0" orientation="0,0,0" />
          <controller config="fdc" />
-		 <epuck2_battery start_charge="1.0"/>
+		 <epuck2_battery start_charge="1.0" discharge_model="cubic" />
       </e-puck2>
 
    </arena>
@@ -57,14 +57,14 @@
    <!-- ****************** -->
    <!-- * Visualization * -->
    <!-- ****************** -->
-<!--    <visualization> -->
-<!--       <qt-opengl> -->
-<!--          <camera> -->
-<!--                   <placements> -->
-<!--                 <placement idx="0" position="13.3656,0.203579,15.7063" look_at="13.3656,0.203579,14.7063" up="0,1,0" lens_focal_length="20" /> -->
-<!--                   </placements> -->
-<!--          </camera> -->
-<!--       </qt-opengl> -->
-<!--    </visualization> -->
+    <visualization>
+      <qt-opengl>
+         <camera>
+            <placements>
+               <placement index="0" position="13.3656,0.203579,15.7063" look_at="13.3656,0.203579,14.7063" up="0,1,0" lens_focal_length="20" />
+            </placements>
+         </camera>
+      </qt-opengl>
+    </visualization>
 
 </argos-configuration>
