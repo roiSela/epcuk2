@@ -18,7 +18,7 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   static CRange<Real> UNIT(0.0f, 2000.0f);
+   static CRange<Real> UNIT(20.0f, 2000.0f);
 
    /****************************************/
    /****************************************/
@@ -138,8 +138,9 @@ namespace argos {
                    "1.0",
                    "The EPuck2 ToF (Time of Fight) sensor.",
                    "This sensor gets the distance to a possible obstacle in front of the robot. The return value\n"
-                   "is between 0.0 and 2000.0, where 0 means collision and 2000.0 means no object is detected in 2 metres range.\n"
-                   "Values between 0.0 and 2000.0 are the distance in millimetres.\n\n"
+                   "is between 20.0 and 2000.0, where 20 is the minimum measured distance and 2000 means that no object\n"
+                   "is detected in 2 metres range.\n"
+                   "Values between 10.0 and 2000.0 are the distance in millimetres.\n\n"
                    "REQUIRED XML CONFIGURATION\n\n"
                    "  <controllers>\n"
                    "    ...\n"
@@ -179,7 +180,7 @@ namespace argos {
                    "It is possible to add uniform noise to the sensor, thus matching the\n"
                    "characteristics of a real robot better. This can be done with the attribute\n"
                    "\"noise_level\", whose allowed range is in [-1,1] and is added to the calculated\n"
-                   "reading. The final sensor reading is always normalised in the [0-2000] range.\n\n"
+                   "reading. The final sensor reading is always normalised in the [10-2000] range.\n\n"
                    "  <controllers>\n"
                    "    ...\n"
                    "    <my_controller ...>\n"

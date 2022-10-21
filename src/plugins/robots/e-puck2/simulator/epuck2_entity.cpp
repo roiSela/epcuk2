@@ -47,7 +47,8 @@ namespace argos {
    static const Real RAB_ELEVATION              = LED_RING_ELEVATION;
 
    static const Real TOF_SENSOR_RANGE     = 2.0f; // 200.0f
-   static const Real TOF_SENSOR_ELEVATION = 0.039f;
+   static const Real TOF_SENSOR_ELEVATION = 0.036f;
+   static const Real TOF_SENSOR_OFFSET    = BODY_RADIUS - 0.003f;
 
    static const Real GREEN_LED_ELEVATION = PROXIMITY_SENSOR_RING_ELEVATION;
 
@@ -158,7 +159,7 @@ namespace argos {
          cOff = CVector3(0.0f, 0.0f, TOF_SENSOR_ELEVATION);
          cDir = CVector3(0.0f, 0.0f, TOF_SENSOR_ELEVATION);
          c_center = CVector3(0.0f, 0.0f, TOF_SENSOR_ELEVATION);
-         cOff.Set(PROXIMITY_SENSOR_RING_RADIUS, 0.0f, 0.0f);
+         cOff.Set(TOF_SENSOR_OFFSET, 0.0f, 0.0f);
          cOff += c_center;
          cDir.Set(TOF_SENSOR_RANGE, 0.0f, 0.0f);
          m_pcEPuck2TOFEquippedEntity->AddSensor(cOff, cDir, TOF_SENSOR_RANGE, m_pcEmbodiedEntity->GetOriginAnchor());
@@ -281,7 +282,7 @@ namespace argos {
          cOff = CVector3(0.0f, 0.0f, TOF_SENSOR_ELEVATION);
          cDir = CVector3(0.0f, 0.0f, TOF_SENSOR_ELEVATION);
          c_center = CVector3(0.0f, 0.0f, TOF_SENSOR_ELEVATION);
-         cOff.Set(PROXIMITY_SENSOR_RING_RADIUS, 0.0f, 0.0f);
+         cOff.Set(TOF_SENSOR_OFFSET, 0.0f, 0.0f);
          cOff += c_center;
          cDir.Set(TOF_SENSOR_RANGE, 0.0f, 0.0f);
          m_pcEPuck2TOFEquippedEntity->AddSensor(cOff, cDir, TOF_SENSOR_RANGE, m_pcEmbodiedEntity->GetOriginAnchor());

@@ -128,9 +128,10 @@ namespace argos {
                   }
                }
             }
+            m_tReadings[i] = 4095.0 - m_tReadings[i];
             /* Apply noise to the sensor */
             if(m_bAddNoise) {
-               m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange);
+               m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange) * 4095.0;
             }
             /* Trunc the reading between 0 and 4095 */
             UNIT.TruncValue(m_tReadings[i]);
@@ -154,7 +155,7 @@ namespace argos {
    /****************************************/
 
    void CEPuck2LightDefaultSensor::Reset() {
-      for(UInt32 i = 0; i < GetReadings().size(); ++i) { // TODO: Implement the EPuck2 model
+      for(UInt32 i = 0; i < GetReadings().size(); ++i) {
          m_tReadings[i] = 0.0f;
       }
    }
@@ -176,10 +177,10 @@ namespace argos {
                    "The EPuck 2 generic light sensor.",
 
                    "This sensor accesses a set of light sensors. The sensors all return a value\n"
-                   "between 0 and 4095, where 0 means nothing within range and 4095 means the perceived\n"
-                   "light saturates the sensor. Values between 0 and 1 depend on the distance of\n"
-                   "the perceived light. Each reading R is calculated with R=(I/x)^2, where x is the\n"
-                   "distance between a sensor and the light, and I is the reference intensity of the\n"
+                   "between 0 and 4095, where 4095 means nothing within range and 0 means strong light.\n"
+                   "Values between 0 and 4095 depend on the distance of the perceived light.\n"
+                   "Each reading R is calculated with R=4095*(1-(I/x)^2), where x is the distance between\n"
+                   "a sensor and the light, and I is the reference intensity of the\n"
                    "perceived light. The reference intensity corresponds to the minimum distance at\n"
                    "which the light saturates a sensor. The reference intensity depends on the\n"
                    "individual light, and it is set with the \"intensity\" attribute of the light\n"

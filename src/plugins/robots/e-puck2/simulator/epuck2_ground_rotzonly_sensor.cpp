@@ -96,7 +96,7 @@ namespace argos {
          m_tReadings[i] = cColor.ToGrayScale() * 4.011764706f;
          /* Apply noise to the sensor */
          if(m_bAddNoise) {
-            m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange);
+            m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange) * 1023.0;
          }
          UNIT.TruncValue(m_tReadings[i]);
       }

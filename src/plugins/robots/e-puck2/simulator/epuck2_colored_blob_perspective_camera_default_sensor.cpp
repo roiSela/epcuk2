@@ -54,7 +54,6 @@ namespace argos {
       virtual bool operator()(CLEDEntity& c_led) {
          /* Process this LED only if it's lit */
          if(c_led.GetColor() != CColor::BLACK) {
-            // LOG << c_led.GetColor() << " " << c_led.GetPosition() << std::endl;
             /* Filter out the LEDs belonging to the sensing entity by checking if they share the same parent entity */
             if(m_pcRootSensingEntity == &c_led.GetRootEntity()) return true;
             /* If we are here, it's because the LED must be processed */

@@ -78,8 +78,8 @@ namespace argos {
 
          /* Apply noise to the sensor */
          if(m_bAddNoise) {
-            m_fLeft += m_pcRNG->Uniform(m_cNoiseRange)*32767.0;
-            m_fRight += m_pcRNG->Uniform(m_cNoiseRange)*32767.0;
+            m_fLeft += m_pcRNG->Uniform(m_cNoiseRange) * 32767.0;
+            m_fRight += m_pcRNG->Uniform(m_cNoiseRange) * 32767.0;
          }
       } else {
             m_fLeft = 0.0;
