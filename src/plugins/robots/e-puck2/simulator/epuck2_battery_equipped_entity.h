@@ -192,7 +192,7 @@ namespace argos {
    /****************************************/
 
    /**
-    * A approximated battery discharge model
+    * An approximated battery discharge model
     */
    class CEPuck2BatteryDischargeModelApprox : public CEPuck2BatteryDischargeModel {
 

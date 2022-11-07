@@ -18,16 +18,16 @@ namespace argos {
    class CFloorEntity;
 }
 
-#include <argos3/plugins/robots/generic/control_interface/ci_ground_sensor.h>
 #include <argos3/core/utility/math/range.h>
 #include <argos3/core/utility/math/rng.h>
 #include <argos3/core/simulator/space/space.h>
 #include <argos3/core/simulator/sensor.h>
+#include "../control_interface/ci_epuck2_ground_sensor.h"
 
 namespace argos {
 
    class CEPuck2GroundRotZOnlySensor : public CSimulatedSensor,
-                                       public CCI_GroundSensor {
+                                       public CCI_Epuck2GroundSensor {
 
    public:
 

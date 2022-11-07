@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['findx',['FindX',['../classargos_1_1CEPuck2BatteryDischargeModelTimeMotion.html#a3de5bf9f6931ad466631c3cf700c6b54',1,'argos::CEPuck2BatteryDischargeModelTimeMotion']]]
+  ['full_5fcharge',['FULL_CHARGE',['../classargos_1_1CEPuck2BatteryEquippedEntity.html#afbaf66e61cccb6bd161789dcdfc6da13',1,'argos::CEPuck2BatteryEquippedEntity']]]
 ];

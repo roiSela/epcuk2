@@ -57,11 +57,10 @@ void CCI_EPuck2Light::ControlStep() {
    }
    m_iPreviousEncoder = iEnc;
    m_fDistance += float(iDiff) * 2 * CRadians::PI.GetValue() * 0.0205f;
-   //LOG << tEncoderReads.EncoderLeftWheel << " " << m_iPreviousEncoder << " " << iDiff << " " << m_fDistance << std::endl;
    LOG << "Est. Distance (mm): " << std::fixed << std::setprecision(1) << m_fDistance << std::endl;
 
    /* Get readings from ToF sensor */
-   Real d = m_pcTOFSensor->GetReadings();
+   Real d = m_pcTOFSensor->GetReading();
    LOG << "TOF: " << d;
    if (uTick == 1) {
       m_fToFbegin = d;

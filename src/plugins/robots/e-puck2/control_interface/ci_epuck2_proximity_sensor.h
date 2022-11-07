@@ -27,13 +27,13 @@ namespace argos {
 
       struct SReading
       {
-         Real Value;
+         SInt32 Value;
          CRadians Angle;
 
          SReading() :
             Value(0.0f) {}
 
-         SReading(Real f_value,
+         SReading(SInt32 f_value,
                   const CRadians& c_angle) :
             Value(f_value),
             Angle(c_angle) {}

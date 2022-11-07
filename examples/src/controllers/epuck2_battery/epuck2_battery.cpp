@@ -76,11 +76,6 @@ void CEPuck2Battery::ControlStep() {
    if (tBatReading.AvailableCharge > 0.0) {
       m_pcWheels->SetLinearVelocity(m_fWheelVelocityLeft, m_fWheelVelocityRight);
 
-/*      if (uTick < 100) {
-         m_pcWheels->SetLinearVelocity(m_fWheelVelocityLeft, m_fWheelVelocityRight);
-      } else {
-         m_pcWheels->SetLinearVelocity(0, 0);
-      }*/
    } else {
       CSimulator::GetInstance().Terminate();
    }

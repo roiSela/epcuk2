@@ -47,7 +47,7 @@ void CSwarmLoopFunctions::PostStep() {
         }
     }
     d /= (m_v.size() * (m_v.size()-1));
-    LOG << "AVG. DISTANCE: " << d << std::endl;
+    LOG << "Avg. Distance: " << d << std::endl;
 }
 
 void CSwarmLoopFunctions::PostExperiment() {

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['value',['Value',['../structargos_1_1CCI__EPuck2ProximitySensor_1_1SReading.html#a8a84885f855eac22e9ea5224cb9ef58b',1,'argos::CCI_EPuck2ProximitySensor::SReading']]]
+  ['wheels',['Wheels',['../structargos_1_1CEPuck2EncoderEquippedEntity_1_1SSensor.html#a544bdea5bf86019728206f086e4c45b2',1,'argos::CEPuck2EncoderEquippedEntity::SSensor']]]
 ];

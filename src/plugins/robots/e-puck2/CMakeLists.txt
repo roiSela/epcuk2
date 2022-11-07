@@ -4,8 +4,10 @@
 # argos3/plugins/robots/e-puck2/control_interface
 set(ARGOS3_HEADERS_PLUGINS_ROBOTS_EPUCK2_CONTROLINTERFACE
   control_interface/ci_epuck2_proximity_sensor.h
+  control_interface/ci_epuck2_light_sensor.h
   control_interface/ci_epuck2_leds_actuator.h
   control_interface/ci_epuck2_tof_sensor.h
+  control_interface/ci_epuck2_ground_sensor.h
   control_interface/ci_epuck2_encoder_sensor.h)
 # argos3/plugins/robots/e-puck2/simulator
 if(ARGOS_BUILD_FOR_SIMULATOR)
@@ -34,8 +36,10 @@ endif(ARGOS_BUILD_FOR_SIMULATOR)
 set(ARGOS3_SOURCES_PLUGINS_ROBOTS_EPUCK2
   ${ARGOS3_HEADERS_PLUGINS_ROBOTS_EPUCK2_CONTROLINTERFACE}
   control_interface/ci_epuck2_proximity_sensor.cpp
+  control_interface/ci_epuck2_light_sensor.cpp
   control_interface/ci_epuck2_leds_actuator.cpp
   control_interface/ci_epuck2_tof_sensor.cpp
+  control_interface/ci_epuck2_ground_sensor.cpp
   control_interface/ci_epuck2_encoder_sensor.cpp)
 if(ARGOS_BUILD_FOR_SIMULATOR)
   set(ARGOS3_SOURCES_PLUGINS_ROBOTS_EPUCK2

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['led',['LED',['../structargos_1_1CEPuck2LEDEquippedEntity_1_1SActuator.html#ad1c5cb8f5550bc51b4f14325e99b27c8',1,'argos::CEPuck2LEDEquippedEntity::SActuator']]]
+  ['full_5fcharge',['FULL_CHARGE',['../classargos_1_1CEPuck2BatteryEquippedEntity.html#afbaf66e61cccb6bd161789dcdfc6da13',1,'argos::CEPuck2BatteryEquippedEntity']]]
 ];

@@ -18,7 +18,7 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   static CRange<Real> UNIT(20.0f, 2000.0f);
+   static CRange<SInt32> UNIT(20, 2000);
 
    /****************************************/
    /****************************************/
@@ -92,6 +92,7 @@ namespace argos {
       cRayEnd += m_pcTOFEntity->GetSensor(0).Anchor.Position;
       cScanningRay.Set(cRayStart,cRayEnd);
       /* Compute reading */
+      Real fReading = 2.0f; /* No intersection */
       /* Get the closest intersection */
       if(GetClosestEmbodiedEntityIntersectedByRay(sIntersection,
                                                    cScanningRay,
@@ -102,31 +103,27 @@ namespace argos {
                                                          sIntersection.TOnRay);
             m_pcControllableEntity->AddCheckedRay(true, cScanningRay);
          }
-         m_tReadings = cScanningRay.GetDistance(sIntersection.TOnRay);
-      }
-      else {
-         /* No intersection */
-         m_tReadings = 2.0f;
+         fReading = cScanningRay.GetDistance(sIntersection.TOnRay);
+      } else {
 
          if(m_bShowRays) {
             m_pcControllableEntity->AddCheckedRay(false, cScanningRay);
          }
       }
       /* Apply noise to the sensor */
-      if(m_bAddNoise)
-      {
-         m_tReadings += m_pcRNG->Uniform(m_cNoiseRange);
+      if(m_bAddNoise) {
+         fReading += m_pcRNG->Uniform(m_cNoiseRange) * 2.0f;
       }
-      m_tReadings *= 1000.0f;
+      m_iReading = int(round(fReading * 1000.0f));
       /* Trunc the reading between 0.0 and 2000.0 */
-      UNIT.TruncValue(m_tReadings);
+      UNIT.TruncValue(m_iReading);
    }
 
    /****************************************/
    /****************************************/
 
    void CEPuck2TOFDefaultSensor::Reset() {
-      m_tReadings = 0.0f;
+      m_iReading = 2000;
    }
 
    /****************************************/
@@ -138,9 +135,9 @@ namespace argos {
                    "1.0",
                    "The EPuck2 ToF (Time of Fight) sensor.",
                    "This sensor gets the distance to a possible obstacle in front of the robot. The return value\n"
-                   "is between 20.0 and 2000.0, where 20 is the minimum measured distance and 2000 means that no object\n"
+                   "is between 20 and 2000, where 20 is the minimum measured distance and 2000 means that no object\n"
                    "is detected in 2 metres range.\n"
-                   "Values between 10.0 and 2000.0 are the distance in millimetres.\n\n"
+                   "Values between 10 and 2000 are the distance in millimetres.\n\n"
                    "REQUIRED XML CONFIGURATION\n\n"
                    "  <controllers>\n"
                    "    ...\n"

@@ -39,7 +39,7 @@ namespace argos {
    static const Real PROXIMITY_SENSOR_RING_ELEVATION       = 0.043f;
    static const Real PROXIMITY_SENSOR_RING_RADIUS          = BODY_RADIUS+0.001f;
    static const Real PROXIMITY_SENSOR_RING_RANGE           = 0.05f;
-   static const Real LIGHT_SENSOR_RING_RANGE               = 0.10f;
+   static const Real LIGHT_SENSOR_RING_RANGE               = 0.50f;
 
    static const CRadians LED_RING_START_ANGLE   = CRadians::ZERO; // CRadians((ARGOS_PI / 8.0f) * 0.5f);
    static const Real LED_RING_RADIUS            = BODY_RADIUS + 0.002;

@@ -17,16 +17,16 @@ namespace argos {
    class CLightSensorEquippedEntity;
 }
 
-#include <argos3/plugins/robots/generic/control_interface/ci_light_sensor.h>
 #include <argos3/core/utility/math/range.h>
 #include <argos3/core/utility/math/rng.h>
 #include <argos3/core/simulator/space/space.h>
 #include <argos3/core/simulator/sensor.h>
+#include "../control_interface/ci_epuck2_light_sensor.h"
 
 namespace argos {
 
    class CEPuck2LightDefaultSensor : public CSimulatedSensor,
-                                     public CCI_LightSensor {
+                                     public CCI_EPuck2LightSensor {
 
    public:
 
@@ -44,7 +44,7 @@ namespace argos {
 
       /**
        * Calculates the light reading resulting from a light source at the given distance.
-       * Denoting the intensity with <em>i</em> and the distance <em>x</em>, this function calculates <em>i</em> = (<em>I</em> / <em>x<em>)^2.
+       * Denoting the intensity with <em>i</em> and the distance <em>x</em>, this function calculates <em>i</em> = (<em>I</em> / <em>x</em>)^2.
        * <em>I</em> is the reference intensity of the light, that is, the distance at which the light reading saturates.
        * It is dependent on the light entity being considered.
        * @param f_distance The distance of the considered light source.

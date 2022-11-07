@@ -19,7 +19,7 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   static CRange<Real> UNIT(0.0f, 4095.0f);
+   static CRange<SInt32> UNIT(0, 4095);
 
    /****************************************/
    /****************************************/
@@ -51,7 +51,7 @@ namespace argos {
 
    void CEPuck2LightDefaultSensor::Init(TConfigurationNode& t_tree) {
       try {
-         CCI_LightSensor::Init(t_tree);
+         CCI_EPuck2LightSensor::Init(t_tree);
          /* Show rays? */
          GetNodeAttributeOrDefault(t_tree, "show_rays", m_bShowRays, m_bShowRays);
          /* Parse noise level */
@@ -77,7 +77,7 @@ namespace argos {
 
    void CEPuck2LightDefaultSensor::Update() {
       /* Erase readings */
-      for(size_t i = 0; i < m_tReadings.size(); ++i)  m_tReadings[i] = 0.0f;
+      for(size_t i = 0; i < m_tReadings.size(); ++i)  m_tReadings[i].Value = 4095;
       /* Ray used for scanning the environment for obstacles */
       CRay3 cScanningRay;
       CVector3 cRayStart;
@@ -95,6 +95,7 @@ namespace argos {
             cRayStart.Rotate(m_pcLightEntity->GetSensor(i).Anchor.Orientation);
             cRayStart += m_pcLightEntity->GetSensor(i).Anchor.Position;
             /* Go through all the light entities */
+            Real fReading = 0.0;
             for(CSpace::TMapPerType::iterator it = mapLights.begin();
                 it != mapLights.end();
                 ++it) {
@@ -114,10 +115,9 @@ namespace argos {
                          }
                          /* Calculate reading */
                          cScanningRay.ToVector(cSensorToLight);
-                         m_tReadings[i] += CalculateReading(cSensorToLight.Length(),
+                         fReading += CalculateReading(cSensorToLight.Length(),
                                                             cLight.GetIntensity());
-                      }
-                      else {
+                      } else {
                          /* There is an occlusion, the light is not visible */
                          if(m_bShowRays) {
                             m_pcControllableEntity->AddIntersectionPoint(cScanningRay,
@@ -128,24 +128,24 @@ namespace argos {
                   }
                }
             }
-            m_tReadings[i] = 4095.0 - m_tReadings[i];
             /* Apply noise to the sensor */
             if(m_bAddNoise) {
-               m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange) * 4095.0;
+               fReading += m_pcRNG->Uniform(m_cNoiseRange);
             }
             /* Trunc the reading between 0 and 4095 */
-            UNIT.TruncValue(m_tReadings[i]);
+            fReading = (1.0 - fReading) * 4095.0;
+            m_tReadings[i].Value = Round(fReading);
+            UNIT.TruncValue(m_tReadings[i].Value);
          }
-      }
-      else {
+      } else {
          /* There are no lights in the environment */
          if(m_bAddNoise) {
             /* Go through the sensors */
             for(UInt32 i = 0; i < m_tReadings.size(); ++i) {
                /* Apply noise to the sensor */
-               m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange);
+               m_tReadings[i].Value += Round(4095.0 * m_pcRNG->Uniform(m_cNoiseRange));
                /* Trunc the reading between 0 and 1 */
-               UNIT.TruncValue(m_tReadings[i]);
+               UNIT.TruncValue(m_tReadings[i].Value);
             }
          }
       }
@@ -156,7 +156,7 @@ namespace argos {
 
    void CEPuck2LightDefaultSensor::Reset() {
       for(UInt32 i = 0; i < GetReadings().size(); ++i) {
-         m_tReadings[i] = 0.0f;
+         m_tReadings[i].Value = 4095;
       }
    }
 
@@ -164,10 +164,10 @@ namespace argos {
    /****************************************/
 
    Real CEPuck2LightDefaultSensor::CalculateReading(Real f_distance, Real f_intensity) {
-      return (f_intensity * f_intensity) / (f_distance * f_distance);
+      return ((f_intensity / 13.3333333333333) * (f_intensity / 13.3333333333333)) / (f_distance * f_distance);
    }
 
-   /****************************************/
+    /****************************************/
    /****************************************/
 
    REGISTER_SENSOR(CEPuck2LightDefaultSensor,
@@ -187,7 +187,7 @@ namespace argos {
                    "entity. In case multiple lights are present in the environment, each sensor\n"
                    "reading is calculated as the sum of the individual readings due to each light.\n"
                    "In other words, light wave interference is not taken into account. In\n"
-                   "controllers, you must include the ci_light_sensor.h header.\n\n"
+                   "controllers, you must include the ci_epuck2_light_sensor.h header.\n\n"
 
                    "REQUIRED XML CONFIGURATION\n\n"
                    "  <controllers>\n"

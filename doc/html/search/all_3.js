@@ -35,6 +35,5 @@ var searchData=
   ['epuck2_5ftof_5fequipped_5fentity_2eh',['epuck2_tof_equipped_entity.h',['../epuck2__tof__equipped__entity_8h.html',1,'']]],
   ['epuck_5fleft_5fwheel',['EPUCK_LEFT_WHEEL',['../namespaceargos.html#ad862b3a6442f51e54d77d493d018cdb2ae389d032e781e49498d97807c27076bc',1,'argos']]],
   ['epuck_5fright_5fwheel',['EPUCK_RIGHT_WHEEL',['../namespaceargos.html#ad862b3a6442f51e54d77d493d018cdb2aa5069f47f778cdde29855e4e0f116dc8',1,'argos']]],
-  ['epuck_5fwheels',['EPUCK_WHEELS',['../namespaceargos.html#ad862b3a6442f51e54d77d493d018cdb2',1,'argos']]],
-  ['eval',['Eval',['../classargos_1_1CEPuck2BatteryDischargeModelTimeMotion.html#a4dae8665a18913d499110133886f73db',1,'argos::CEPuck2BatteryDischargeModelTimeMotion']]]
+  ['epuck_5fwheels',['EPUCK_WHEELS',['../namespaceargos.html#ad862b3a6442f51e54d77d493d018cdb2',1,'argos']]]
 ];

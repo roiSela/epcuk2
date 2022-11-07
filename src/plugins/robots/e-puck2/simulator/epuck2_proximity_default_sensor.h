@@ -17,11 +17,11 @@ namespace argos {
    class CProximitySensorEquippedEntity;
 }
 
-#include <argos3/plugins/robots/e-puck2/control_interface/ci_epuck2_proximity_sensor.h>
 #include <argos3/core/utility/math/range.h>
 #include <argos3/core/utility/math/rng.h>
 #include <argos3/core/simulator/space/space.h>
 #include <argos3/core/simulator/sensor.h>
+#include "../control_interface/ci_epuck2_proximity_sensor.h"
 
 namespace argos {
 

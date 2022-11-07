@@ -1,6 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node2" href="$classargos_1_1CEPuck2BatteryEquippedEntity.html" title="argos::CEPuck2BatteryEquipped\lEntity" alt="" coords="123,5,337,47"/>
-<area shape="rect" id="node3" href="$classargos_1_1CEPuck2CameraEquippedEntity.html" title="argos::CEPuck2CameraEquipped\lEntity" alt="" coords="121,71,339,112"/>
-<area shape="rect" id="node4" href="$classargos_1_1CEPuck2EncoderEquippedEntity.html" title="argos::CEPuck2EncoderEquipped\lEntity" alt="" coords="120,136,340,177"/>
-<area shape="rect" id="node5" href="$classargos_1_1CEPuck2TOFEquippedEntity.html" title="argos::CEPuck2TOFEquipped\lEntity" alt="" coords="131,201,329,243"/>
+<area shape="rect" id="node2" href="$classargos_1_1CEPuck2BatteryDischargeModel.html" title="argos::CEPuck2BatteryDischarge\lModel" alt="" coords="244,104,463,145"/>
+<area shape="rect" id="node3" href="$classargos_1_1CEPuck2BatteryDischargeModelApprox.html" title="argos::CEPuck2BatteryDischarge\lModelApprox" alt="" coords="511,5,729,47"/>
+<area shape="rect" id="node4" href="$classargos_1_1CEPuck2BatteryDischargeModelCubic.html" title="argos::CEPuck2BatteryDischarge\lModelCubic" alt="" coords="511,71,729,112"/>
+<area shape="rect" id="node5" href="$classargos_1_1CEPuck2BatteryDischargeModelLinear.html" title="argos::CEPuck2BatteryDischarge\lModelLinear" alt="" coords="511,136,729,177"/>
+<area shape="rect" id="node6" href="$classargos_1_1CEPuck2BatteryDischargeModelSimple.html" title="argos::CEPuck2BatteryDischarge\lModelSimple" alt="" coords="511,201,729,243"/>
 </map>

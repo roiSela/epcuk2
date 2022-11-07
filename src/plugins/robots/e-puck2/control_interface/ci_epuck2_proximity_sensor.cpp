@@ -12,12 +12,10 @@
 #include <argos3/core/wrappers/lua/lua_utility.h>
 #endif
 
-namespace argos
-{
+namespace argos {
 
    CCI_EPuck2ProximitySensor::CCI_EPuck2ProximitySensor() :
-      m_tReadings(8)
-   {
+      m_tReadings(8) {
        // Set the values for the proximity sensor angles
        m_tReadings[0].Angle = -CRadians(0.2618); // CRadians::PI / 10.5884f;
        m_tReadings[1].Angle = -CRadians::PI_OVER_FOUR; // CRadians::PI / 3.5999f;

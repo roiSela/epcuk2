@@ -18,7 +18,7 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   static CRange<Real> UNIT(0.0f, 4095.0f);
+   static CRange<SInt32> UNIT(0, 4095);
 
    /****************************************/
    /****************************************/
@@ -95,6 +95,7 @@ namespace argos {
          cScanningRay.Set(cRayStart,cRayEnd);
          /* Compute reading */
          /* Get the closest intersection */
+         Real fReading = 0.0f;
          if(GetClosestEmbodiedEntityIntersectedByRay(sIntersection,
                                                      cScanningRay,
                                                      *m_pcEmbodiedEntity)) {
@@ -104,22 +105,20 @@ namespace argos {
                                                             sIntersection.TOnRay);
                m_pcControllableEntity->AddCheckedRay(true, cScanningRay);
             }
-            m_tReadings[i].Value = CalculateReading(cScanningRay.GetDistance(sIntersection.TOnRay));
-         }
-         else {
+            fReading = CalculateReading(cScanningRay.GetDistance(sIntersection.TOnRay));
+         } else {
             /* No intersection */
-            m_tReadings[i].Value = 0.0f;
+            fReading = 0.0f;
 
             if(m_bShowRays) {
                m_pcControllableEntity->AddCheckedRay(false, cScanningRay);
             }
          }
          /* Apply noise to the sensor */
-         if(m_bAddNoise)
-         {
-            m_tReadings[i].Value += m_pcRNG->Uniform(m_cNoiseRange);
+         if(m_bAddNoise) {
+            fReading += m_pcRNG->Uniform(m_cNoiseRange);
          }
-         m_tReadings[i].Value = Round(m_tReadings[i].Value * 4095.0f);
+         m_tReadings[i].Value = Round(fReading * 4095);
          /* Trunc the reading between 0 and 4095 */
          UNIT.TruncValue(m_tReadings[i].Value);
       }
@@ -131,7 +130,7 @@ namespace argos {
    void CEPuck2ProximityDefaultSensor::Reset()
    {
       for(UInt32 i = 0; i < GetReadings().size(); ++i)
-         m_tReadings[i].Value = 0.0f;
+         m_tReadings[i].Value = 0;
    }
 
    /****************************************/

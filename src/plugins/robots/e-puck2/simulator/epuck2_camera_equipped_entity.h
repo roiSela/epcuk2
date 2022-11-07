@@ -96,7 +96,7 @@ namespace argos {
 
       /**
        * Sets the focal length of the camera.
-       * @param c_focallength The focal length of the camera.
+       * @param f_focal_length The focal length of the camera.
        */
       inline void SetFocalLength(Real f_focal_length) {
          m_fFocalLength = f_focal_length;
@@ -112,7 +112,7 @@ namespace argos {
 
       /**
        * Sets the range of the camera.
-       * @param c_range The range of the camera.
+       * @param f_range The range of the camera.
        */
       inline void SetRange(Real f_range) {
          m_fRange = f_range;
@@ -161,8 +161,8 @@ namespace argos {
 
       /**
        * Sets the image size in pixel.
-       * @param un_width The image width in pixel.
-       * @param un_height The image height in pixel.
+       * @param n_width The image width in pixel.
+       * @param n_height The image height in pixel.
        */
       inline void SetImagePxSize(SInt32 n_width,
                                  SInt32 n_height) {

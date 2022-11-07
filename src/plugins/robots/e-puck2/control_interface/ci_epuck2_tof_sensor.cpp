@@ -17,8 +17,8 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   const Real CCI_EPuck2TOFSensor::GetReadings() const {
-     return m_tReadings;
+   const SInt32 CCI_EPuck2TOFSensor::GetReading() const {
+     return m_iReading;
    }
 
    /****************************************/
@@ -26,9 +26,7 @@ namespace argos {
 
 #ifdef ARGOS_WITH_LUA
    void CCI_EPuck2TOFSensor::CreateLuaState(lua_State* pt_lua_state) {
-      CLuaUtility::OpenRobotStateTable(pt_lua_state, "tof");
-      CLuaUtility::AddToTable(pt_lua_state, 1, m_tReadings);
-      CLuaUtility::CloseRobotStateTable(pt_lua_state);
+      CLuaUtility::AddToTable(pt_lua_state, "tof", m_iReading);
    }
 #endif
 
@@ -37,11 +35,8 @@ namespace argos {
 
 #ifdef ARGOS_WITH_LUA
    void CCI_EPuck2TOFSensor::ReadingsToLuaState(lua_State* pt_lua_state) {
-      lua_getfield(pt_lua_state, -1, "tof");
-      lua_pushnumber(pt_lua_state, 1          );
-      lua_pushnumber(pt_lua_state, m_tReadings);
-      lua_settable  (pt_lua_state, -3         );
-      lua_pop(pt_lua_state, 1);
+      lua_pushnumber(pt_lua_state, m_iReading);
+      lua_setfield(pt_lua_state, -2, "tof");
    }
 #endif
 

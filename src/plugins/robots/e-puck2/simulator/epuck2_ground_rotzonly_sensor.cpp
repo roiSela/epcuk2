@@ -19,7 +19,7 @@ namespace argos {
    /****************************************/
    /****************************************/
 
-   static CRange<Real> UNIT(0.0f, 1023.0f);
+   static CRange<SInt32> UNIT(0, 1023);
 
    /****************************************/
    /****************************************/
@@ -47,7 +47,7 @@ namespace argos {
 
    void CEPuck2GroundRotZOnlySensor::Init(TConfigurationNode& t_tree) {
       try {
-         CCI_GroundSensor::Init(t_tree);
+         CCI_Epuck2GroundSensor::Init(t_tree);
          /* Parse noise level */
          Real fNoiseLevel = 0.0f;
          GetNodeAttributeOrDefault(t_tree, "noise_level", fNoiseLevel, fNoiseLevel);
@@ -93,11 +93,12 @@ namespace argos {
          const CColor& cColor = m_pcFloorEntity->GetColorAtPoint(cSensorPos.GetX(),
                                                                  cSensorPos.GetY());
          /* Set the reading */
-         m_tReadings[i] = cColor.ToGrayScale() * 4.011764706f;
+         Real fReading = cColor.ToGrayScale() * 4.011764706f;
          /* Apply noise to the sensor */
          if(m_bAddNoise) {
-            m_tReadings[i] += m_pcRNG->Uniform(m_cNoiseRange) * 1023.0;
+            fReading += m_pcRNG->Uniform(m_cNoiseRange) * 1023.0;
          }
+         m_tReadings[i] = int(round(fReading));
          UNIT.TruncValue(m_tReadings[i]);
       }
    }
@@ -107,7 +108,7 @@ namespace argos {
 
    void CEPuck2GroundRotZOnlySensor::Reset() {
       for(UInt32 i = 0; i < GetReadings().size(); ++i) {
-         m_tReadings[i] = 0.0f;
+         m_tReadings[i] = 0;
       }
    }
 

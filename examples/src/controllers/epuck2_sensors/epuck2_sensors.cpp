@@ -35,17 +35,17 @@ CEPuck2Sensors::CEPuck2Sensors() :
 /****************************************/
 
 void CEPuck2Sensors::Init(TConfigurationNode& t_node) {
-   m_pcWheels        = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
-   m_pcProximity     = GetSensor  <CCI_EPuck2ProximitySensor       >("epuck2_proximity"     );
-   m_pcRABAct        = GetActuator<CCI_RangeAndBearingActuator     >("range_and_bearing"    );
-   m_pcRABSens       = GetSensor  <CCI_RangeAndBearingSensor       >("range_and_bearing"    );
-   m_pcLedAct        = GetActuator<CCI_EPuck2LEDsActuator          >("epuck2_leds"          );
-   m_pcLightSens     = GetSensor  <CCI_LightSensor                 >("epuck2_light"         );
+   m_pcWheels        = GetActuator<CCI_DifferentialSteeringActuator      >("differential_steering"                 );
+   m_pcProximity     = GetSensor  <CCI_EPuck2ProximitySensor             >("epuck2_proximity"                      );
+   m_pcRABAct        = GetActuator<CCI_RangeAndBearingActuator           >("range_and_bearing"                     );
+   m_pcRABSens       = GetSensor  <CCI_RangeAndBearingSensor             >("range_and_bearing"                     );
+   m_pcLedAct        = GetActuator<CCI_EPuck2LEDsActuator                >("epuck2_leds"                           );
+   m_pcLightSens     = GetSensor  <CCI_EPuck2LightSensor                 >("epuck2_light"                          );
    m_pcCamera        = GetSensor  <CCI_ColoredBlobPerspectiveCameraSensor>("epuck2_colored_blob_perspective_camera");
-   m_pcTOFSensor     = GetSensor  <CCI_EPuck2TOFSensor             >("epuck2_tof"           );
-   m_pcGroundSensor  = GetSensor  <CCI_GroundSensor                >("epuck2_ground"        );
-   m_pcEncoderSensor = GetSensor  <CCI_EPuck2EncoderSensor         >("epuck2_encoder"       );
-   m_pcBattery       = GetSensor  <CCI_BatterySensor               >("epuck2_battery"       );
+   m_pcTOFSensor     = GetSensor  <CCI_EPuck2TOFSensor                   >("epuck2_tof"                            );
+   m_pcGroundSensor  = GetSensor  <CCI_Epuck2GroundSensor                >("epuck2_ground"                         );
+   m_pcEncoderSensor = GetSensor  <CCI_EPuck2EncoderSensor               >("epuck2_encoder"                        );
+   m_pcBattery       = GetSensor  <CCI_BatterySensor                     >("epuck2_battery"                        );
 
    GetNodeAttributeOrDefault(t_node, "velocity", m_fWheelVelocity, m_fWheelVelocity);
 
@@ -80,10 +80,10 @@ void CEPuck2Sensors::ControlStep() {
    }
 
    /* Get readings from light sensor */
-   const std::vector<Real>& tLightReads = m_pcLightSens->GetReadings();
+   const CCI_EPuck2LightSensor::TReadings& tLightReads = m_pcLightSens->GetReadings();
    LOG << "Light: " << std::setprecision(1);
    for(size_t i = 0; i < tLightReads.size(); ++i) {
-      LOG << tLightReads[i] << " # ";
+      LOG << tLightReads[i].Value << " # ";
    }
    LOG << std::endl;
 
@@ -97,10 +97,10 @@ void CEPuck2Sensors::ControlStep() {
    LOG << std::endl;
 
    /* Get readings from ToF sensor */
-   LOG << "TOF: " << std::setprecision(1) << m_pcTOFSensor->GetReadings() << std::endl;
+   LOG << "TOF: " << std::setprecision(1) << m_pcTOFSensor->GetReading() << std::endl;
 
    /* Get readings from ground sensor */
-   const std::vector<Real>& tReadings = m_pcGroundSensor->GetReadings();
+   const std::vector<SInt32>& tReadings = m_pcGroundSensor->GetReadings();
    LOG << "Ground: ";
    for(size_t i = 0; i < tReadings.size(); ++i) {
       LOG << tReadings[i] << " # ";
@@ -124,7 +124,7 @@ void CEPuck2Sensors::ControlStep() {
    LOG << "Battery - Available Charge: " << std::fixed << std::setprecision(3) << tBatReading.AvailableCharge << "  Time Left: " << tBatReading.TimeLeft << std::endl;
 
    /* Movement */
-   bool bFront = m_pcTOFSensor->GetReadings() <= 20.0;
+   bool bFront = m_pcTOFSensor->GetReading() <= 20.0;
    cData = CByteArray();
 
    if (sId == "1") {

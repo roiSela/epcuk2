@@ -3,6 +3,7 @@
 Make sure you have ARGoS >= 3.0.0-beta52 installed!
 
 Commands:
+
 ```shell
 mkdir build
 cd build
@@ -38,4 +39,14 @@ argos3 -c src/experiments/epuck2_encoders.argos
 ## Example LEDS
 ```shell
 argos3 -c src/experiments/epuck2_leds.argos
+```
+
+## Example GROUND SENSORS
+```shell
+argos3 -c src/experiments/epuck2_ground.argos
+```
+
+## Example LUA
+```shell
+argos3 -c src/experiments/epuck2_lua.argos
 ```

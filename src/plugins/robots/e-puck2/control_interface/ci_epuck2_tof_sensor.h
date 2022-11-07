@@ -23,7 +23,7 @@ namespace argos {
 
       virtual ~CCI_EPuck2TOFSensor() {}
 
-      const Real GetReadings() const;
+      const SInt32 GetReading() const;
 
 #ifdef ARGOS_WITH_LUA
       virtual void CreateLuaState(lua_State* pt_lua_state);
@@ -33,7 +33,7 @@ namespace argos {
 
    protected:
 
-      Real m_tReadings;
+      SInt32 m_iReading;
 
    };
 

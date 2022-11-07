@@ -100,8 +100,9 @@ namespace argos {
        * @param c_center The position of LED ring centre wrt the reference entity.
        * @param f_radius The radius of the LED ring.
        * @param c_start_angle The angle at which the first LED must be placed. Expressed wrt the local entity <em>x</em>-axis.
+       * @param un_num_leds the number of LEDs
        * @param c_body_center The position of LED ring centre wrt the reference entity.
-       * @param s_front_offset The offset for the front LED.
+       * @param c_front_offset The offset for the front LED.
        * @param s_anchor The anchor of the LEDs.
        */
       void AddLEDs(const CVector3& c_center,

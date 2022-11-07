@@ -68,13 +68,9 @@ void CEPuck2Swarm::ControlStep() {
                 CByteArray cRxData = tMsgs[i].Data;
                 Real range = tMsgs[i].Range;
                 CRadians bearing = tMsgs[i].HorizontalBearing;
-                // LOG << sId << "> Rx: " << std::fixed << std::setprecision(3) << range << " " << ToDegrees(bearing).GetValue() << std::endl;
                 if (m_iDebug >= 3) {
                     LOG << sId << "> Rx: " << range << " " << ToDegrees(bearing).GetValue() << ": " << cRxData;
                 }
-//                 int iSource = cRxData[0];
-//                 int iDest   = cRxData[1];
-//                 char chMsg  = cRxData[2];
 
                 if (range < m_rDistance) {
                     x -= (m_rDistance - range) * sin(bearing.GetValue());
@@ -125,7 +121,6 @@ void CEPuck2Swarm::ControlStep() {
                         if (m_iDebug >= 2) {
                             LOG << sId << "> Angle: " << angle << " Current: " << cAngle.GetValue() << " Target: " << target << std::endl;
                         }
-                        // if ( (angle > -15.0 && angle < 15.0) || angle < -165.0 || angle > 165.0 ) {
                         Real error = target - cAngle.GetValue();
                         if (std::abs(error) < 15.0) {
                             float offset = sin(CRadians(error * 180.0 / 15.0).GetValue()) / 5.0;
