@@ -130,14 +130,14 @@ namespace argos {
          AddComponent(*m_pcLightSensorEquippedEntity);
 
          CRadians sensor_angle[8];
-         sensor_angle[0] = -CRadians(0.2618);
-         sensor_angle[1] = -CRadians::PI_OVER_FOUR;
+         sensor_angle[0] = -CRadians::PI / 10.5884f;
+         sensor_angle[1] = -CRadians::PI / 3.5999f;
          sensor_angle[2] = -CRadians::PI_OVER_TWO; //side sensor
-         sensor_angle[3] = -CRadians(2.6179); // back sensor
-         sensor_angle[4] = CRadians(2.6179);  // back sensor
+         sensor_angle[3] = -CRadians::PI / 1.2f; // back sensor
+         sensor_angle[4] = CRadians::PI / 1.2f;  // back sensor
          sensor_angle[5] = CRadians::PI_OVER_TWO; //side sensor
-         sensor_angle[6] = CRadians::PI_OVER_FOUR;
-         sensor_angle[7] = CRadians(0.2618);
+         sensor_angle[6] = CRadians::PI / 3.5999f;
+         sensor_angle[7] = CRadians::PI / 10.5884f;
 
          CRadians cAngle;
          CVector3 cOff, cDir, c_center = CVector3(0.0f, 0.0f, PROXIMITY_SENSOR_RING_ELEVATION);
@@ -254,14 +254,14 @@ namespace argos {
          AddComponent(*m_pcLightSensorEquippedEntity);
 
          CRadians sensor_angle[8];
-         sensor_angle[0] = -CRadians(0.2618);
-         sensor_angle[1] = -CRadians::PI_OVER_FOUR;
+         sensor_angle[0] = -CRadians::PI / 10.5884f;
+         sensor_angle[1] = -CRadians::PI / 3.5999f;
          sensor_angle[2] = -CRadians::PI_OVER_TWO; //side sensor
-         sensor_angle[3] = -CRadians(2.6179); // back sensor
-         sensor_angle[4] = CRadians(2.6179);  // back sensor
+         sensor_angle[3] = -CRadians::PI / 1.2f; // back sensor
+         sensor_angle[4] = CRadians::PI / 1.2f;  // back sensor
          sensor_angle[5] = CRadians::PI_OVER_TWO; //side sensor
-         sensor_angle[6] = CRadians::PI_OVER_FOUR;
-         sensor_angle[7] = CRadians(0.2618);
+         sensor_angle[6] = CRadians::PI / 3.5999f;
+         sensor_angle[7] = CRadians::PI / 10.5884f;
 
          CRadians cAngle;
          CVector3 cOff, cDir, c_center = CVector3(0.0f, 0.0f, PROXIMITY_SENSOR_RING_ELEVATION);

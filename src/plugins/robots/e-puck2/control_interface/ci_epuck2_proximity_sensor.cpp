@@ -17,19 +17,18 @@ namespace argos {
    CCI_EPuck2ProximitySensor::CCI_EPuck2ProximitySensor() :
       m_tReadings(8) {
        // Set the values for the proximity sensor angles
-       m_tReadings[0].Angle = -CRadians(0.2618); // CRadians::PI / 10.5884f;
-       m_tReadings[1].Angle = -CRadians::PI_OVER_FOUR; // CRadians::PI / 3.5999f;
-       m_tReadings[2].Angle = -CRadians::PI_OVER_TWO; //side sensor
-       m_tReadings[3].Angle = -CRadians(2.6179); // CRadians::PI / 1.2f;   // back sensor
-       m_tReadings[4].Angle = CRadians(2.6179); // CRadians::PI / 0.8571f; // back sensor
-       m_tReadings[5].Angle = CRadians::PI_OVER_TWO; // CRadians::PI / 0.6667f; //side sensor
-       m_tReadings[6].Angle = CRadians::PI_OVER_FOUR; // CRadians::PI / 0.5806f;
-       m_tReadings[7].Angle = CRadians(0.2618); // CRadians::PI / 0.5247f;
+         m_tReadings[0].Angle = -CRadians::PI / 10.5884f;
+         m_tReadings[1].Angle = -CRadians::PI / 3.5999f;
+         m_tReadings[2].Angle = -CRadians::PI_OVER_TWO;
+         m_tReadings[3].Angle = -CRadians::PI / 1.2f;
+         m_tReadings[4].Angle = CRadians::PI / 1.2f;
+         m_tReadings[5].Angle = CRadians::PI_OVER_TWO;
+         m_tReadings[6].Angle = CRadians::PI / 3.5999f;
+         m_tReadings[7].Angle = CRadians::PI / 10.5884f;
 
-       for(size_t i = 0; i < 8; ++i)
-       {
-          m_tReadings[i].Angle.SignedNormalize();
-       }
+         for(size_t i = 0; i < 8; ++i) {
+            m_tReadings[i].Angle.SignedNormalize();
+         }
    }
 
    /****************************************/
