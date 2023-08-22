@@ -73,8 +73,8 @@ namespace argos {
       /* Go through the sensors */
       if (m_pcEncoderEntity->GetNumSensors() > 0) {
          CEPuck2EncoderEquippedEntity::SSensor& sSens = m_pcEncoderEntity->GetSensor(0);
-         m_fLeft += sSens.StepsPerCm * sSens.Wheels.GetWheelVelocity(0) / CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
-         m_fRight += sSens.StepsPerCm * sSens.Wheels.GetWheelVelocity(1) / CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
+         m_fLeft += sSens.StepsPerCm * sSens.Wheels.GetWheelVelocity(0) * CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
+         m_fRight += sSens.StepsPerCm * sSens.Wheels.GetWheelVelocity(1) * CSimulator::GetInstance().GetPhysicsEngines()[0]->GetSimulationClockTick();
 
          /* Apply noise to the sensor */
          if(m_bAddNoise) {

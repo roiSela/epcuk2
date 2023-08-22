@@ -17,7 +17,7 @@ namespace argos {
 
    CEPuck2EncoderEquippedEntity::SSensor::SSensor(const CWheeledEntity& c_wheels) :
       Wheels(c_wheels) {
-      StepsPerCm =  10.0 / (CRadians::TWO_PI.GetValue() * c_wheels.GetWheelRadius(0));
+      StepsPerCm =  1000.0 / (CRadians::TWO_PI.GetValue() * c_wheels.GetWheelRadius(0));
    }
 
    /****************************************/
