@@ -46,7 +46,7 @@ namespace argos {
                    Real f_rab_range = 0.8f,
                    size_t un_rab_data_size = 2,
                    const std::string& str_bat_model = "",
-                   const CRadians& c_perspcam_aperture = ToRadians(CDegrees(15.0f)),
+                   const CRadians& c_perspcam_aperture = ToRadians(CDegrees(18.5f)),
                    Real f_perspcam_focal_length = 0.035f,
                    Real f_perspcam_range = 1.0f);
 

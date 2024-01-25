@@ -18,12 +18,12 @@
       <sensors>
         <differential_steering implementation="default" />
         <epuck2_proximity implementation="default" show_rays="true" />
-		<epuck2_light implementation="default" show_rays="true" />
-		<epuck2_tof implementation="default" show_rays="true" />
-		<epuck2_encoder implementation="default" />
-		<epuck2_ground implementation="rot_z_only" />
+        <epuck2_light implementation="default" show_rays="true" />
+        <epuck2_tof implementation="default" show_rays="true" />
+        <epuck2_encoder implementation="default" />
+        <epuck2_ground implementation="rot_z_only" />
         <epuck2_colored_blob_perspective_camera implementation="default" medium="leds" show_rays="true" />
-        <epuck2_battery implementation="default"/>		
+        <epuck2_battery implementation="default"/>
       </sensors>
       <params script="./src/controllers/epuck2_lua/epuck2_lua.lua"/>
     </lua_controller>
@@ -41,7 +41,7 @@
          <body position="0.5,0,0" orientation="90,0,0" />
       </box>
       <floor id="floor" source="image" path="./src/experiments/floor.png" />
-           
+
       <e-puck2 id="1">
          <body position="-0.40,0,0" orientation="0,0,0" />
          <controller config="lua" />
@@ -62,7 +62,7 @@
          <camera>
             <placements>
                <placement index="0" position="0.0056,0.003579,1.2263" look_at="0.0056,0.003579,0.2263" up="0,1,0" lens_focal_length="20" />
-    		   <placement index="1" position="0.747328,0.00718183,0.63523" look_at="-0.042145,0.00017719,0.0214842" up="-0.613722,-0.00544528,0.789504" lens_focal_length="20" />               
+               <placement index="1" position="0.747328,0.00718183,0.63523" look_at="-0.042145,0.00017719,0.0214842" up="-0.613722,-0.00544528,0.789504" lens_focal_length="20" />
             </placements>
          </camera>
       </qt-opengl>
