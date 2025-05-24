@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<argos-configuration>
+
+    <framework>
+        <system threads="1" />
+        <experiment length="500" ticks_per_second="10" random_seed="42" />
+    </framework>
+
+    <configuration>
+        <air_resistance direction="-1.0,0.0" magnitude="7.0"/>
+    </configuration>
+
+    <controllers>
+        <epuck2_air_resistance_controller id="airbot" library="build/lib/controllers/epuck2_airResistance/libepuck2_airResistance">
+            <actuators>
+                <differential_steering implementation="default" />
+            </actuators>
+            <sensors/>  <!-- Required even if no sensors are used -->
+            <params velocity="5.0" />
+        </epuck2_air_resistance_controller>
+    </controllers>
+
+
+    <arena size="2, 2, 1" center="0,0,0.5">
+        <e-puck2 id="1">
+            <body position="-0.5,0,0" orientation="0,0,0" />
+            <controller config="airbot" />
+        </e-puck2>
+
+        <e-puck2 id="2">
+            <body position="-0.5,0.3,0" orientation="0,0,0" />
+            <controller config="airbot" />
+        </e-puck2>
+    </arena>
+
+    <physics_engines>
+        <dynamics2d id="dyn2d" />
+    </physics_engines>
+
+    <media>
+        <range_and_bearing id="rab" />
+        <led id="leds" />
+    </media>
+
+    <visualization>
+        <qt-opengl>
+            <camera>
+                <placements>
+                    <placement index="0" position="0,0,5" look_at="0,0,0" up="0,1,0" lens_focal_length="60" />
+                </placements>
+            </camera>
+        </qt-opengl>
+    </visualization>
+
+</argos-configuration>
