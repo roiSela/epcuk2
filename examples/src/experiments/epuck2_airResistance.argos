@@ -1,52 +1,72 @@
 <?xml version="1.0" ?>
 <argos-configuration>
 
+    <!-- -------- FRAMEWORK -------- -->
     <framework>
-        <system threads="1" />
-        <experiment length="500" ticks_per_second="10" random_seed="42" />
+        <system threads="1"/>
+        <experiment length="500"
+                    ticks_per_second="10"
+                    random_seed="42"/>
     </framework>
 
+    <!-- -------- GLOBAL WIND -------- -->
     <configuration>
-        <air_resistance direction="-1.0,0.0" magnitude="7.0"/>
+        <air_resistance direction="-1,0" magnitude="6.0"/>
     </configuration>
 
+    <!-- -------- CONTROLLERS -------- -->
     <controllers>
-        <epuck2_air_resistance_controller id="airbot" library="build/lib/controllers/epuck2_airResistance/libepuck2_airResistance">
+        <epuck2_air_resistance_controller
+                id="airbot"
+                library="build/lib/controllers/epuck2_airResistance/libepuck2_airResistance">
+
             <actuators>
-                <differential_steering implementation="default" />
+                <differential_steering implementation="default"/>
             </actuators>
-            <sensors/>  <!-- Required even if no sensors are used -->
-            <params velocity="5.0" />
+
+            <sensors>
+                <positioning implementation="default"/>
+            </sensors>
+
+            <params velocity="5.0"/>
         </epuck2_air_resistance_controller>
     </controllers>
 
+    <!-- -------- ARENA -------- -->
+    <arena size="2,2,1" center="0,0,0.5">
 
-    <arena size="2, 2, 1" center="0,0,0.5">
+        <!-- Robot 1 faces EAST (+X) -->
         <e-puck2 id="1">
-            <body position="-0.5,0,0" orientation="0,0,0" />
-            <controller config="airbot" />
+            <body position="-0.5,0,0" orientation="0,0,0"/>
+            <controller config="airbot"/>
         </e-puck2>
 
+        <!-- Robot 2 faces NORTH (+Y) -->
         <e-puck2 id="2">
-            <body position="-0.5,0.3,0" orientation="0,0,0" />
-            <controller config="airbot" />
+            <body position="-0.5,0.3,0" orientation="90,0,0"/>
+            <controller config="airbot"/>
         </e-puck2>
+
     </arena>
 
+    <!-- -------- PHYSICS ENGINE -------- -->
     <physics_engines>
-        <dynamics2d id="dyn2d" />
+        <dynamics2d id="dyn2d"/>
     </physics_engines>
 
-    <media>
-        <range_and_bearing id="rab" />
-        <led id="leds" />
-    </media>
+    <!-- -------- MEDIA (must exist even if empty) -------- -->
+    <media/>
 
+    <!-- -------- VISUALISATION (qt-opengl window) -------- -->
     <visualization>
         <qt-opengl>
             <camera>
                 <placements>
-                    <placement index="0" position="0,0,5" look_at="0,0,0" up="0,1,0" lens_focal_length="60" />
+                    <placement index="0"
+                               position="0,0,5"
+                               look_at="0,0,0"
+                               up="0,1,0"
+                               lens_focal_length="60"/>
                 </placements>
             </camera>
         </qt-opengl>
