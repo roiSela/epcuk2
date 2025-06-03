@@ -11,20 +11,23 @@ using namespace argos;
 class CEPuck2AirResistance : public CCI_Controller {
 
 public:
-    CEPuck2AirResistance();
-    ~CEPuck2AirResistance() override = default;
+   CEPuck2AirResistance();
+   ~CEPuck2AirResistance() override = default;
 
-    void Init(TConfigurationNode& t_node) override;
-    void ControlStep()                   override;
-    void Reset()                         override {}
-    void Destroy()                       override {}
+   /* CCI_Controller interface */
+   void Init(TConfigurationNode& t_node) override;
+   void ControlStep()                   override;
+   void Reset()                         override {}
+   void Destroy()                       override {}
 
 private:
-    CCI_DifferentialSteeringActuator* m_pcWheels;
-    CCI_PositioningSensor*            m_pcPos;
+   /* Devices */
+   CCI_DifferentialSteeringActuator* m_pcWheels;
+   CCI_PositioningSensor*            m_pcPos;
 
-    CVector2 m_cAirResistance;   /* wind vector (world frame)      */
-    Real     m_fBaseVelocity;    /* speed when there is no wind    */
+   /* Parameters */
+   CVector2 m_cWind;         /* global wind vector                  */
+   Real     m_fBaseVel;      /* commanded forward speed (cm/s)      */
 };
 
 #endif /* EPUCK2_AIR_RESISTANCE_H */

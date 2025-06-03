@@ -1,20 +1,19 @@
 <?xml version="1.0" ?>
 <argos-configuration>
 
-    <!-- -------- FRAMEWORK -------- -->
+    <!-- ---------- CORE ---------- -->
     <framework>
         <system threads="1"/>
-        <experiment length="500"
-                    ticks_per_second="10"
-                    random_seed="42"/>
+        <experiment length="500" ticks_per_second="10" random_seed="42"/>
     </framework>
 
-    <!-- -------- GLOBAL WIND -------- -->
+    <!-- ---------- GLOBAL WIND ---------- -->
+    <!-- 135° = south-west, magnitude 6 cm/s -->
     <configuration>
-        <air_resistance direction="-1,0" magnitude="6.0"/>
+        <air_resistance angle_deg="180" magnitude="5.0"/>
     </configuration>
 
-    <!-- -------- CONTROLLERS -------- -->
+    <!-- ---------- CONTROLLER ---------- -->
     <controllers>
         <epuck2_air_resistance_controller
                 id="airbot"
@@ -28,11 +27,12 @@
                 <positioning implementation="default"/>
             </sensors>
 
+            <!-- Base speed 5 cm/s -->
             <params velocity="5.0"/>
         </epuck2_air_resistance_controller>
     </controllers>
 
-    <!-- -------- ARENA -------- -->
+    <!-- ---------- ARENA ---------- -->
     <arena size="2,2,1" center="0,0,0.5">
 
         <!-- Robot 1 faces EAST (+X) -->
@@ -49,15 +49,13 @@
 
     </arena>
 
-    <!-- -------- PHYSICS ENGINE -------- -->
+    <!-- ---------- PHYSICS ---------- -->
     <physics_engines>
         <dynamics2d id="dyn2d"/>
     </physics_engines>
 
-    <!-- -------- MEDIA (must exist even if empty) -------- -->
+    <!-- ---------- MEDIA + VISUAL ---------- -->
     <media/>
-
-    <!-- -------- VISUALISATION (qt-opengl window) -------- -->
     <visualization>
         <qt-opengl>
             <camera>
