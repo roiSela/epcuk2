@@ -4,6 +4,7 @@
 #include <argos3/core/control_interface/ci_controller.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
+#include <argos3/core/simulator/entity/embodied_entity.h>
 #include <argos3/core/utility/math/vector2.h>
 
 using namespace argos;
@@ -11,23 +12,23 @@ using namespace argos;
 class CEPuck2AirResistance : public CCI_Controller {
 
 public:
-   CEPuck2AirResistance();
-   ~CEPuck2AirResistance() override = default;
+    CEPuck2AirResistance() = default;
 
-   /* CCI_Controller interface */
-   void Init(TConfigurationNode& t_node) override;
-   void ControlStep()                   override;
-   void Reset()                         override {}
-   void Destroy()                       override {}
+    void Init(TConfigurationNode& t_node) override;
+    void ControlStep()                   override;
 
 private:
-   /* Devices */
-   CCI_DifferentialSteeringActuator* m_pcWheels;
-   CCI_PositioningSensor*            m_pcPos;
+    /* devices */
+    CCI_DifferentialSteeringActuator* m_pcWheels{nullptr};
+    CCI_PositioningSensor*            m_pcPos{nullptr};
 
-   /* Parameters */
-   CVector2 m_cWind;         /* global wind vector                  */
-   Real     m_fBaseVel;      /* commanded forward speed (cm/s)      */
+    /* body pointer (resolved on first ControlStep) */
+    CEmbodiedEntity* m_pcBody{nullptr};
+
+    /* params */
+    CVector2 m_cWindCms;       /* wind vector (cm/s) world frame */
+    Real     m_fBaseCms{5.0f}; /* forward wheel speed (cm/s)     */
+    Real     m_fDt{0.1f};      /* seconds per simulation tick    */
 };
 
-#endif /* EPUCK2_AIR_RESISTANCE_H */
+#endif   /* EPUCK2_AIR_RESISTANCE_H */

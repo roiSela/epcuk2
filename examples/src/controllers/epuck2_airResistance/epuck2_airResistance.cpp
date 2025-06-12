@@ -2,96 +2,85 @@
 
 #include <argos3/core/simulator/simulator.h>
 #include <argos3/core/utility/configuration/argos_configuration.h>
-#include <argos3/core/utility/math/angles.h>     // Cos(), Sin()
-#include <algorithm>                             // std::clamp
-#include <cmath>                                 // std::cos, std::sin, std::fabs
+#include <argos3/core/utility/math/angles.h>
+#include <argos3/core/simulator/space/space.h>
+#include <argos3/plugins/robots/e-puck2/simulator/epuck2_entity.h>
 
-/****************************************/
-/* CONSTRUCTOR */
-/****************************************/
+#include <cmath>   // std::cos, std::sin
 
-CEPuck2AirResistance::CEPuck2AirResistance() :
-   m_pcWheels(nullptr),
-   m_pcPos(nullptr),
-   m_fBaseVel(5.0f) {}
-
-/****************************************/
-/* INIT */
-/****************************************/
-
+/******** Init ***************************************************************/
 void CEPuck2AirResistance::Init(TConfigurationNode& t_node) {
 
-   /* Devices */
    m_pcWheels = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcPos    = GetSensor  <CCI_PositioningSensor>           ("positioning");
 
-   /* <params velocity="…">  (default 5 cm/s) */
-   GetNodeAttributeOrDefault(t_node, "velocity", m_fBaseVel, m_fBaseVel);
+   /* base speed */
+   GetNodeAttributeOrDefault(t_node, "velocity", m_fBaseCms, m_fBaseCms);
 
-   /*****  GLOBAL WIND (polar form only)  *****/
-   TConfigurationNode tRoot = CSimulator::GetInstance().GetConfigurationRoot();
-   TConfigurationNode tCfg  = GetNode(tRoot, "configuration");
-   TConfigurationNode tAir  = GetNode(tCfg,  "air_resistance");
+   /* Δt from experiment */
+   UInt32 unTPS = 10;
+   GetNodeAttribute(
+       GetNode(GetNode(CSimulator::GetInstance().GetConfigurationRoot(),"framework"),
+               "experiment"),
+       "ticks_per_second", unTPS);
+   m_fDt = 1.0f / static_cast<Real>(unTPS);
 
-   /* Mandatory attributes */
-   Real fAngleDeg = 0.0f, fMag = 0.0f;
-   GetNodeAttribute(tAir, "angle_deg", fAngleDeg);
-   GetNodeAttribute(tAir, "magnitude", fMag);
+   /* wind (polar) */
+   TConfigurationNode tAir =
+       GetNode(GetNode(CSimulator::GetInstance().GetConfigurationRoot(),"configuration"),
+               "air_resistance");
+   Real deg = 0.0f, mag = 0.0f;
+   GetNodeAttribute(tAir,"angle_deg", deg);
+   GetNodeAttribute(tAir,"magnitude", mag);
 
-   /* Convert polar → Cartesian */
    const Real PI = 3.14159265358979323846;
-   Real fAngRad  = fAngleDeg * PI / 180.0;
-   CVector2 cDir(std::cos(fAngRad), std::sin(fAngRad));   // unit vector
-   m_cWind = cDir * fMag;                                 // wind vector
-
-   LOG << "[AirRes] wind = " << m_cWind << std::endl;
+   Real rad = deg * PI / 180.0;
+   m_cWindCms.Set(std::cos(rad)*mag, std::sin(rad)*mag);
 }
 
-/****************************************/
-/* CONTROL STEP : vector-addition drag  */
-/****************************************/
-
+/******** ControlStep *******************************************************/
 void CEPuck2AirResistance::ControlStep() {
 
-   /* Current yaw (rotation about Z) */
-   CRadians cYaw, cTmp1, cTmp2;
-   m_pcPos->GetReading().Orientation.ToEulerAngles(cYaw, cTmp1, cTmp2);
+   /* ----------------------------------
+    * 1. Resolve body pointer once
+    * ---------------------------------- */
+   if(!m_pcBody) {
+      const std::string& strId = GetId();
+      CEntity& cEnt = CSimulator::GetInstance().GetSpace().GetEntity(strId);
+      auto* pcRobot = dynamic_cast<CEPuck2Entity*>(&cEnt);
+      if(pcRobot) m_pcBody = &pcRobot->GetEmbodiedEntity();
+      else        return;                     /* wait until next tick */
+   }
 
-   /* Forward unit vector in WORLD frame */
-   CVector2 cFwd(Cos(cYaw), Sin(cYaw));
+   /* ----------------------------------
+    * 2. Wheel command: straight forward
+    * ---------------------------------- */
+   m_pcWheels->SetLinearVelocity(m_fBaseCms, m_fBaseCms);
 
-   /* Base velocity vector (world) */
-   CVector2 cBase = cFwd * m_fBaseVel;
+   /* ----------------------------------
+    * 3. Pose & heading
+    * ---------------------------------- */
+   const auto& pose = m_pcPos->GetReading();
+   CRadians yaw,tmp1,tmp2;
+   pose.Orientation.ToEulerAngles(yaw,tmp1,tmp2);
+   CVector2 fwd(Cos(yaw), Sin(yaw));
 
-   /* Vector addition: base + wind */
-   CVector2 cNet  = cBase + m_cWind;
+   /* ----------------------------------
+    * 4. Galilean velocity addition
+    * ---------------------------------- */
+   CVector2 vTot = fwd * m_fBaseCms + m_cWindCms;   /* cm/s */
 
-   /* Speed is the length of the resultant vector                       */
-   Real fSpeed = cNet.Length();
+   /* ----------------------------------
+    * 5. Displacement this tick (m)
+    * ---------------------------------- */
+   CVector2 d = vTot * (m_fDt / 100.0f);           /* cm→m */
+   CVector3 newPos(pose.Position.GetX()+d.GetX(),
+                   pose.Position.GetY()+d.GetY(),
+                   pose.Position.GetZ());
 
-   /* Preserve sign: if resultant points backwards relative to body axis
-      the robot should drive in reverse                                */
-   if(cNet.DotProduct(cFwd) < 0.0f)
-      fSpeed = -fSpeed;
-
-   /* Dead-zone & clamp to wheel capability                             */
-   if(std::fabs(fSpeed) < 0.01f) fSpeed = 0.0f;
-   constexpr Real MAX_W = 12.0f;                  // e-puck2 wheel limit (cm/s)
-   fSpeed = std::clamp(fSpeed, -MAX_W, MAX_W);
-
-   LOG << "[Ctrl] base=" << m_fBaseVel
-       << "  wind=" << m_cWind
-       << "  net="  << cNet
-       << "  → speed=" << fSpeed
-       << std::endl;
-
-   /* Straight-line command (no heading change) */
-   m_pcWheels->SetLinearVelocity(fSpeed, fSpeed);
+   m_pcBody->MoveTo(newPos, pose.Orientation, false, true);
 }
 
-/****************************************/
-/* REGISTER CONTROLLER */
-/****************************************/
-
+/******** Register ***********************************************************/
 REGISTER_CONTROLLER(CEPuck2AirResistance,
-                     "epuck2_air_resistance_controller")
+                    "epuck2_air_resistance_controller")
