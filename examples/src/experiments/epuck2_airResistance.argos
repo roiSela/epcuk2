@@ -1,40 +1,47 @@
-<?xml version="1.0"?>
+<?xml version="1.0" ?>
 <argos-configuration>
 
-    <!-- CORE -->
+    <!-- ---------- CORE ---------- -->
     <framework>
         <system threads="1"/>
         <experiment length="500" ticks_per_second="10" random_seed="42"/>
     </framework>
 
-    <!-- WIND  (180° wind, 5 cm/s) -->
+    <!-- ---------- GLOBAL WIND ---------- -->
+    <!-- Example: 180 deg (southward), 5 cm s⁻¹ -->
     <configuration>
         <air_resistance angle_deg="180" magnitude="5.0"/>
     </configuration>
 
-    <!-- CONTROLLER -->
+    <!-- ---------- CONTROLLER ---------- -->
     <controllers>
         <epuck2_air_resistance_controller
                 id="airbot"
                 library="build/lib/controllers/epuck2_airResistance/libepuck2_airResistance">
+
             <actuators>
                 <differential_steering implementation="default"/>
             </actuators>
+
             <sensors>
                 <positioning implementation="default"/>
             </sensors>
+
+            <!-- Forward speed (cm s⁻¹) -->
             <params velocity="5.0"/>
         </epuck2_air_resistance_controller>
     </controllers>
 
-    <!-- ARENA -->
+    <!-- ---------- ARENA ---------- -->
     <arena size="2,2,1" center="0,0,0.5">
 
+        <!-- Robot 1 faces EAST (+X) -->
         <e-puck2 id="1">
             <body position="-0.5,0,0" orientation="0,0,0"/>
             <controller config="airbot"/>
         </e-puck2>
 
+        <!-- Robot 2 faces NORTH (+Y) -->
         <e-puck2 id="2">
             <body position="-0.5,0.3,0" orientation="90,0,0"/>
             <controller config="airbot"/>
@@ -42,14 +49,18 @@
 
     </arena>
 
-    <!-- PHYSICS -->
+    <!-- ---------- PHYSICS ---------- -->
     <physics_engines>
         <dynamics2d id="dyn2d"/>
     </physics_engines>
 
-    <media/>
+    <!-- ---------- LOOP FUNCTIONS (wind) ---------- -->
+    <loop_functions
+            library="build/lib/loop_functions/wind_loop_functions/libwind_loop_functions"
+            label="wind_loop_functions"/>
 
-    <!-- VISUALISATION -->
+    <!-- ---------- MEDIA + VISUAL ---------- -->
+    <media/>
     <visualization>
         <qt-opengl>
             <camera>

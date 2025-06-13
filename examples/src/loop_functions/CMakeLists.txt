@@ -1,2 +1,3 @@
 add_subdirectory(sensors_loop_functions)
 add_subdirectory(swarm_loop_functions)
+add_subdirectory(wind_loop_functions)
