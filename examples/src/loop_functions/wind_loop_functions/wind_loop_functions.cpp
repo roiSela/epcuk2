@@ -3,13 +3,10 @@
 #include <argos3/core/simulator/simulator.h>
 #include <argos3/plugins/robots/e-puck2/simulator/epuck2_entity.h>
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_single_body_object_model.h>
-/* Chipmunk headers come transitively from the include above */
+#include <argos3/core/utility/math/angles.h>
 
-#include <cmath>
-
-/* ---------- Init : read wind + Δt ---------------------------------- */
+/* ------------ read global wind once ----------------------- */
 void CWindLoopFunctions::Init(TConfigurationNode&) {
-
    TConfigurationNode air =
      GetNode(GetNode(CSimulator::GetInstance().GetConfigurationRoot(),
                      "configuration"),
@@ -20,48 +17,42 @@ void CWindLoopFunctions::Init(TConfigurationNode&) {
    GetNodeAttribute(air,"magnitude",mag);
 
    const Real PI = 3.14159265358979323846;
-   Real rad = deg*PI/180.0;
-   m_cWindCms.Set(std::cos(rad)*mag, std::sin(rad)*mag);
-
-   UInt32 tps = 10;
-   GetNodeAttribute(
-     GetNode(GetNode(CSimulator::GetInstance().GetConfigurationRoot(),
-                     "framework"),
-             "experiment"),
-     "ticks_per_second", tps);
-   m_fDt = 1.0/static_cast<Real>(tps);
+   m_cWindCms.Set(std::cos(deg*PI/180.0)*mag,
+                  std::sin(deg*PI/180.0)*mag);
 }
 
-/* ---------- PreStep : apply F = m·a to every e-puck2 --------------- */
+/* ------------ overwrite body velocity before physics ------ */
 void CWindLoopFunctions::PreStep() {
 
-   const CVector2 a = (m_cWindCms/100.0)*(1.0/m_fDt);          /* m s⁻² */
+   const CVector2 wind_ms = m_cWindCms / 100.0;          /* m s⁻¹ */
 
-   /* all e-puck2 entities in the space */
-   CSpace::TMapPerType& robots =
+   auto& bots =
      CSimulator::GetInstance().GetSpace().GetEntitiesByType("e-puck2");
 
-   for(const auto& it : robots) {
-      auto& epuck = *any_cast<CEPuck2Entity*>(it.second);
+   for(const auto& it : bots) {
+      auto& epk = *any_cast<CEPuck2Entity*>(it.second);
 
-      /* fetch the physics model through the body component            */
-      CPhysicsModel& phys =
-        epuck.GetComponent<CEmbodiedEntity>("body").GetPhysicsModel("dyn2d");
+      /* heading */
+      CRadians yaw,p,r;
+      epk.GetEmbodiedEntity().GetOriginAnchor().Orientation
+          .ToEulerAngles(yaw,p,r);
+      CVector2 fwd( Cos(yaw), Sin(yaw) );
 
-      /* every e-puck2 is single-body */
+      /* wheel command: 5 cm s⁻¹ straight */
+      const Real BASE_CMS = 5.0;
+      CVector2 vWheel_ms = fwd * (BASE_CMS/100.0);
+
+      /* physics model */
+      auto& phys =
+        epk.GetComponent<CEmbodiedEntity>("body").GetPhysicsModel("dyn2d");
       auto* pSingle =
         dynamic_cast<CDynamics2DSingleBodyObjectModel*>(&phys);
-      if(!pSingle) continue;                     /* safety */
+      if(!pSingle) continue;
 
-      cpBody* body  = pSingle->GetBody();
-      cpFloat mass  = cpBodyGetMass(body);
-
-      /* F = m·a (Newtons) applied at CoM                              */
-      cpBodyApplyForce(body,
-                       cpv(a.GetX()*mass, a.GetY()*mass),
-                       cpvzero);
+      cpBodySetVel(pSingle->GetBody(),
+                   cpv(vWheel_ms.GetX()+wind_ms.GetX(),
+                       vWheel_ms.GetY()+wind_ms.GetY()));
    }
 }
 
-/* ---------- register ------------------------------------------------ */
 REGISTER_LOOP_FUNCTIONS(CWindLoopFunctions,"wind_loop_functions")

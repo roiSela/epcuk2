@@ -6,12 +6,15 @@
 
 using namespace argos;
 
+/* wind applied as velocity in PreStep() */
 class CWindLoopFunctions : public CLoopFunctions {
+
 public:
-   void Init(TConfigurationNode&) override;
-   void PreStep()               override;
+   void Init(TConfigurationNode& t_node) override;
+   void PreStep() override;                 /* v = v_wheel + wind */
+
 private:
-   CVector2 m_cWindCms;
-   Real     m_fDt{0.1f};
+   CVector2 m_cWindCms;                     /* cm s⁻¹ (world) */
 };
+
 #endif

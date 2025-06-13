@@ -3,23 +3,18 @@
 
 #include <argos3/core/control_interface/ci_controller.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
-#include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
-#include <argos3/core/utility/math/vector2.h>
 
 using namespace argos;
 
 class CEPuck2AirResistance : public CCI_Controller {
-
 public:
-    CEPuck2AirResistance() = default;
-    void Init(TConfigurationNode& t_node) override;
-    void ControlStep()                   override;
+    void Init(TConfigurationNode& node) override;
+    void ControlStep()                 override;
+    void Reset() override {}  void Destroy() override {}
 
 private:
     CCI_DifferentialSteeringActuator* m_pcWheels{nullptr};
-    CCI_PositioningSensor*            m_pcPos{nullptr};
-    CVector2 m_cWindCms;   /* global wind (cm/s, world) */
-    Real     m_fBaseCms{5.0f};
+    Real m_fBaseCms{5.0f};                /* cm s⁻¹ forward */
 };
 
 #endif
