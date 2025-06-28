@@ -3,18 +3,35 @@
 
 #include <argos3/core/control_interface/ci_controller.h>
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
+#include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
 
-using namespace argos;
+struct cpBody;                                 // forward decl for Chipmunk
 
-class CEPuck2AirResistance : public CCI_Controller {
+namespace argos {
+
+class CEPuck2AirResistance final : public CCI_Controller {
+
 public:
-    void Init(TConfigurationNode& node) override;
-    void ControlStep()                 override;
-    void Reset() override {}  void Destroy() override {}
+   void Init(TConfigurationNode& t_node) override;
+   void ControlStep()                   override;
+   void Reset()                         override {}
+   void Destroy()                       override {}
 
 private:
-    CCI_DifferentialSteeringActuator* m_pcWheels{nullptr};
-    Real m_fBaseCms{5.0f};                /* cm s⁻¹ forward */
+   void LazyInitBody();                            // Chipmunk hookup
+
+   /* devices */
+   CCI_DifferentialSteeringActuator* m_pcWheels = nullptr;
+   CCI_PositioningSensor*            m_pcPos    = nullptr;
+
+   /* params */
+   Real     m_fBaseCms  = 5.0f;                    // wheel cmd (cm s⁻¹)
+   CVector2 m_cWindCms;                            // wind   (cm s⁻¹)
+
+   /* cached physics */
+   bool     m_bBodyReady = false;
+   cpBody*  m_ptBody     = nullptr;
 };
 
+} // namespace argos
 #endif

@@ -4,17 +4,17 @@
 #include <argos3/core/simulator/loop_functions.h>
 #include <argos3/core/utility/math/vector2.h>
 
-using namespace argos;
-
-/* wind applied as velocity in PreStep() */
-class CWindLoopFunctions : public CLoopFunctions {
+/* Logic-only loop-functions (no drawing) */
+class CWindLoopFunctions final : public argos::CLoopFunctions {
 
 public:
-   void Init(TConfigurationNode& t_node) override;
-   void PreStep() override;                 /* v = v_wheel + wind */
+   void Init(argos::TConfigurationNode& t_node) override;
+
+   /* Accessor for the wind vector (used by Qt user functions) */
+   const argos::CVector2& GetWind() const { return m_cWindCms; }
 
 private:
-   CVector2 m_cWindCms;                     /* cm s⁻¹ (world) */
+   argos::CVector2 m_cWindCms;   /* wind in cm s⁻¹ */
 };
 
-#endif
+#endif /* WIND_LOOP_FUNCTIONS_H */
