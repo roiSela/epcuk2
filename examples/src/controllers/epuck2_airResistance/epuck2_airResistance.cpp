@@ -72,7 +72,7 @@ void CEPuck2AirResistance::ControlStep() {
    /* 1. drive forward --------------------------------------------- */
    m_pcWheels->SetLinearVelocity(m_fBaseCms, m_fBaseCms);
 
-    // TODO: addResistanceControlStep() that will contain wind handling and dumb init
+    // TODO: addResistanceControlStep() that will contain wind handling and Lazy init
 }
 
 /* ------------------------------------------------------------------ */
