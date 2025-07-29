@@ -4,7 +4,6 @@
 #include <argos3/core/simulator/space/space.h>
 #include <argos3/core/utility/configuration/argos_configuration.h>
 #include <argos3/core/utility/math/angles.h>
-#include <argos3/core/utility/logging/argos_log.h>
 
 #include <argos3/plugins/robots/e-puck2/simulator/epuck2_entity.h>
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_single_body_object_model.h>
@@ -14,71 +13,68 @@
 
 using namespace argos;
 
-/* -------------------------------------------------- Init ---------- */
+/* 1 cm s⁻¹ of wind ⇒ this fraction of m·v added each tick */
+static constexpr Real WIND_IMPULSE_SCALE = 3.5;
+
+/* ------------------------------------------------------------------ */
 void CEPuck2AirResistance::Init(TConfigurationNode& t_node) {
 
-   /* devices -------------------------------------------------------- */
+   /* device handles */
    m_pcWheels = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcPos    = GetSensor  <CCI_PositioningSensor>           ("positioning");
 
-   /* robot-specific params ----------------------------------------- */
    GetNodeAttributeOrDefault(t_node, "velocity", m_fBaseCms, m_fBaseCms);
 
-   /* read global wind vector from <configuration><air_resistance> -- */
-   TConfigurationNode tAir =
-     GetNode(GetNode(CSimulator::GetInstance().GetConfigurationRoot(),
-                     "configuration"),
-             "air_resistance");
+   /* fetch <configuration><air_resistance …/> ---------------------- */
+   TConfigurationNode& tRoot = CSimulator::GetInstance().GetConfigurationRoot();
+   TConfigurationNode  tConf = GetNode(tRoot, "configuration");
+   TConfigurationNode  tAir  = GetNode(tConf, "air_resistance");
 
-   Real fDeg = 0.0, fMag = 0.0;
-   GetNodeAttribute(tAir, "angle_deg", fDeg);
-   GetNodeAttribute(tAir, "magnitude", fMag);
+   Real deg = 0.0, mag = 0.0;
+   GetNodeAttribute(tAir, "angle_deg", deg);
+   GetNodeAttribute(tAir, "magnitude", mag);
 
-   /* convert degrees → radians and build wind vector in cm s⁻¹ */
-   const Real rad = fDeg * ARGOS_PI / 180.0;
-   m_cWindCms.Set(fMag * std::cos(rad),
-                  fMag * std::sin(rad));
+   const Real rad = deg * ARGOS_PI / 180.0;
+   m_cWindCms.Set(mag * std::cos(rad),
+                  mag * std::sin(rad));
 }
 
-/* -------------------------------------------------- chipmunk body-- */
+/* ------------------------------------------------------------------ */
 void CEPuck2AirResistance::LazyInitBody() {
    if(m_bBodyReady) return;
 
    auto& cEntity   = CSimulator::GetInstance().GetSpace().GetEntity(GetId());
    auto& cEmbodied = *dynamic_cast<CEmbodiedEntity*>(
-                        &static_cast<CComposableEntity&>(cEntity).GetComponent("body"));
+        &static_cast<CComposableEntity&>(cEntity).GetComponent("body"));
 
    auto* pcModel = dynamic_cast<CDynamics2DSingleBodyObjectModel*>(
                      &cEmbodied.GetPhysicsModel("dyn2d"));
    if(!pcModel)
-      THROW_ARGOSEXCEPTION("No dyn2d model for " << GetId());
+       THROW_ARGOSEXCEPTION("No dyn2d model for " << GetId());
 
    m_ptBody     = pcModel->GetBody();
    m_bBodyReady = true;
 }
 
-/* -------------------------------------------------- step ---------- */
+/* ------------------------------------------------------------------ */
 void CEPuck2AirResistance::ControlStep() {
 
    LazyInitBody();
 
-   /* REMOVE the wheel command – Chipmunk velocity alone controls motion */
-   /* m_pcWheels->SetLinearVelocity(m_fBaseCms, m_fBaseCms); */
+    /* 2. apply wind impulse once per tick --------------------------- */
+    Real mass = cpBodyGetMass(m_ptBody);          // ≈ 0.039 kg
+    CVector2 J = (m_cWindCms / 100.0) * mass * WIND_IMPULSE_SCALE;
 
-   /* heading in world frame --------------------------------------- */
-   CRadians yaw, pitch, roll;
-   m_pcPos->GetReading().Orientation.ToEulerAngles(yaw, pitch, roll);
-   CVector2 fwd(Cos(yaw), Sin(yaw));                // robot forward unit-vec
+    cpBodyApplyImpulse(m_ptBody,
+                       cpv(J.GetX(), J.GetY()),
+                       cpvzero);
 
-   /* vectors in m s⁻¹ ---------------------------------------------- */
-   CVector2 vWheel = fwd        * (m_fBaseCms / 100.0);   // cm → m
-   CVector2 vWind  = m_cWindCms / 100.0;
-   CVector2 vTot   = vWheel + vWind;
+   /* 1. drive forward --------------------------------------------- */
+   m_pcWheels->SetLinearVelocity(m_fBaseCms, m_fBaseCms);
 
-   /* override Chipmunk body velocity ------------------------------ */
-   cpBodySetVel(m_ptBody, cpv(2*vTot.GetX(), 2*vTot.GetY()));
+    // TODO: addResistanceControlStep()
 }
 
-/* register with ARGoS */
+/* ------------------------------------------------------------------ */
 REGISTER_CONTROLLER(CEPuck2AirResistance,
                     "epuck2_air_resistance_controller")

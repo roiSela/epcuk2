@@ -1,42 +1,37 @@
 <?xml version="1.0"?>
 <argos-configuration>
 
-    <!-- ─── CORE ─────────────────────────────────────────────────────── -->
+    <!-- ── CORE ─────────────────────────────────────────────────────── -->
     <framework>
         <system threads="1"/>
         <experiment length="500" ticks_per_second="10" random_seed="42"/>
     </framework>
 
-    <!-- ─── GLOBAL WIND  (180° → west, 5 cm s⁻¹) ─────────────────────── -->
+    <!-- ── GLOBAL WIND  (135° → south-west, 5 cm/s) ─────────────────── -->
     <configuration>
-        <air_resistance angle_deg="180" magnitude="5.0"/>
+        <air_resistance angle_deg="270" magnitude="5.0"/>
     </configuration>
 
-    <!-- ─── CONTROLLERS ──────────────────────────────────────────────── -->
+    <!-- ── CONTROLLERS ──────────────────────────────────────────────── -->
     <controllers>
         <epuck2_air_resistance_controller
                 id="airbot"
                 library="build/lib/controllers/epuck2_airResistance/libepuck2_airResistance">
-            <actuators>
-                <differential_steering implementation="default"/>
-            </actuators>
-            <sensors>
-                <positioning implementation="default"/>
-            </sensors>
+            <actuators><differential_steering implementation="default"/></actuators>
+            <sensors  ><positioning           implementation="default"/></sensors>
             <params velocity="5.0"/>
         </epuck2_air_resistance_controller>
     </controllers>
 
-    <!-- ─── ARENA ────────────────────────────────────────────────────── -->
-    <arena size="2, 2, 1" center="0, 0, 0.5">
+    <!-- ── ARENA (2 m × 2 m × 1 m) with four static walls ───────────── -->
+    <arena size="2,2,1" center="0,0,0.5">
 
-        <!-- Robot 1 : faces EAST (+X) – stays almost still -->
+        <!-- Robots ------------------------------------------------------ -->
         <e-puck2 id="1">
             <body position="-0.5, 0,   0" orientation="0, 0, 0"/>
             <controller config="airbot"/>
         </e-puck2>
 
-        <!-- Robot 2 : faces NORTH (+Y) – drifts north-west -->
         <e-puck2 id="2">
             <body position="-0.5, 0.3, 0" orientation="90, 0, 0"/>
             <controller config="airbot"/>
@@ -44,40 +39,36 @@
 
     </arena>
 
-    <!-- ─── PHYSICS ENGINE ───────────────────────────────────────────── -->
+    <!-- ── PHYSICS ENGINE ───────────────────────────────────────────── -->
     <physics_engines>
         <dynamics2d id="dyn2d"/>
     </physics_engines>
 
-    <!-- ─── LOOP-FUNCTIONS (wind logic) ─────────────────────────────── -->
+    <!-- ── LOOP-FUNCTIONS (wind logic) ──────────────────────────────── -->
     <loop_functions
             library="build/lib/loop_functions/wind_loop_functions/libwind_loop_functions"
             label="wind_loop_functions"/>
 
-    <!-- ─── VISUALISATION (Qt-OpenGL) ───────────────────────────────── -->
+    <!-- ── VISUALISATION (Qt-OpenGL) ────────────────────────────────── -->
     <visualization>
         <qt-opengl>
-
-            <!-- Draw the red wind arrow each frame -->
             <user_functions
                     library="build/lib/loop_functions/wind_loop_functions/libwind_qt_user_functions"
                     label="wind_qt_user_functions"/>
 
-            <!-- Simple top-down camera -->
             <camera>
                 <placements>
                     <placement index="0"
-                               position="0, 0, 5"
-                               look_at="0, 0, 0"
-                               up="0, 1, 0"
+                               position="0,0,5"
+                               look_at="0,0,0"
+                               up="0,1,0"
                                lens_focal_length="60"/>
                 </placements>
             </camera>
-
         </qt-opengl>
     </visualization>
 
-    <!-- ─── MEDIA (unused) ───────────────────────────────────────────── -->
+    <!-- ── MEDIA (unused) ───────────────────────────────────────────── -->
     <media/>
 
 </argos-configuration>
