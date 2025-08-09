@@ -17,11 +17,9 @@
 
 using namespace argos;
 
-/* 1 cm s⁻¹ of wind ⇒ this fraction of m·v added each tick */
-static constexpr Real WIND_IMPULSE_SCALE = 3.5;
-
 /* ------------------------------------------------------------------ */
-void CAirResistance::Init(TConfigurationNode& t_node) {
+void CAirResistance::Init(TConfigurationNode& t_node)
+{
 
    /* generic device handles */
    m_pcWheels = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
@@ -29,7 +27,7 @@ void CAirResistance::Init(TConfigurationNode& t_node) {
 
    GetNodeAttributeOrDefault(t_node, "velocity", m_fBaseCms, m_fBaseCms);
 
-   /* fetch <configuration><air_resistance …/> ---------------------- */
+   /* read <configuration><air_resistance …/> ------------------------ */
    TConfigurationNode& tRoot = CSimulator::GetInstance().GetConfigurationRoot();
    TConfigurationNode  tConf = GetNode(tRoot, "configuration");
    TConfigurationNode  tAir  = GetNode(tConf, "air_resistance");
@@ -44,7 +42,10 @@ void CAirResistance::Init(TConfigurationNode& t_node) {
 }
 
 /* ------------------------------------------------------------------ */
-void CAirResistance::LazyInitBody() {
+/*  Ensure we have the Chipmunk body pointer (lazy)                    */
+/* ------------------------------------------------------------------ */
+void CAirResistance::EnsurePhysicsHandle()
+{
    if(m_bBodyReady) return;
 
    /* get this controller's entity and required components */
@@ -64,22 +65,32 @@ void CAirResistance::LazyInitBody() {
 }
 
 /* ------------------------------------------------------------------ */
-void CAirResistance::ControlStep() {
+/*  Apply wind as an impulse once per tick                             */
+/* ------------------------------------------------------------------ */
+void CAirResistance::ApplyWindImpulse()
+{
+   const Real   mass = cpBodyGetMass(m_ptBody);              /* robot mass (kg) */
+   const CVector2 J  = (m_cWindCms / 100.0) * mass * WIND_IMPULSE_SCALE;
+   cpBodyApplyImpulse(m_ptBody, cpv(J.GetX(), J.GetY()), cpvzero);
+}
 
-   LazyInitBody();
+/* ------------------------------------------------------------------ */
+/*  Call this first in ControlStep                                     */
+/* ------------------------------------------------------------------ */
+void CAirResistance::HandleAerodynamicsStep()
+{
+   EnsurePhysicsHandle();
+   ApplyWindImpulse();
+}
 
-   /* 2. apply wind impulse once per tick ---------------------------- */
-   Real mass = cpBodyGetMass(m_ptBody);            // robot mass (kg)
-   CVector2 J = (m_cWindCms / 100.0) * mass * WIND_IMPULSE_SCALE;
+/* ------------------------------------------------------------------ */
+void CAirResistance::ControlStep()
+{
+   /* 0) physics pre-step: ensure body + apply wind */
+   HandleAerodynamicsStep();
 
-   cpBodyApplyImpulse(m_ptBody,
-                      cpv(J.GetX(), J.GetY()),
-                      cpvzero);
-
-   /* 1. drive forward ---------------------------------------------- */
+   /* 1) simple behavior: drive forward */
    m_pcWheels->SetLinearVelocity(m_fBaseCms, m_fBaseCms);
-
-   // TODO: addResistanceControlStep() to hold wind handling + lazy init
 }
 
 /* ------------------------------------------------------------------ */
