@@ -7,26 +7,30 @@
         <experiment length="500" ticks_per_second="10" random_seed="42"/>
     </framework>
 
-    <!-- ── GLOBAL WIND  (135° → south-west, 5 cm/s) ─────────────────── -->
+    <!-- ── GLOBAL WIND  (270° → west, 5 cm/s) ───────────────────────── -->
     <configuration>
         <air_resistance angle_deg="270" magnitude="5.0"/>
     </configuration>
 
     <!-- ── CONTROLLERS ──────────────────────────────────────────────── -->
     <controllers>
-        <epuck2_air_resistance_controller
+        <air_resistance_controller
                 id="airbot"
-                library="build/lib/controllers/epuck2_airResistance/libepuck2_airResistance">
-            <actuators><differential_steering implementation="default"/></actuators>
-            <sensors  ><positioning           implementation="default"/></sensors>
+                library="build/lib/controllers/air_resistance/libair_resistance">
+            <actuators>
+                <differential_steering implementation="default"/>
+            </actuators>
+            <sensors>
+                <positioning implementation="default"/>
+            </sensors>
             <params velocity="5.0"/>
-        </epuck2_air_resistance_controller>
+        </air_resistance_controller>
     </controllers>
 
-    <!-- ── ARENA (2 m × 2 m × 1 m) with four static walls ───────────── -->
+    <!-- ── ARENA (2 m × 2 m × 1 m) with two robots ─────────────────── -->
     <arena size="2,2,1" center="0,0,0.5">
 
-        <!-- Robots ------------------------------------------------------ -->
+        <!-- Robots -->
         <e-puck2 id="1">
             <body position="-0.5, 0,   0" orientation="0, 0, 0"/>
             <controller config="airbot"/>

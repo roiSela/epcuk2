@@ -1,11 +1,15 @@
-#include "epuck2_airResistance.h"
+#include "air_resistance.h"
 
 #include <argos3/core/simulator/simulator.h>
 #include <argos3/core/simulator/space/space.h>
 #include <argos3/core/utility/configuration/argos_configuration.h>
 #include <argos3/core/utility/math/angles.h>
 
-#include <argos3/plugins/robots/e-puck2/simulator/epuck2_entity.h>
+/* needed to downcast the top-level entity to access components */
+#include <argos3/core/simulator/entity/composable_entity.h>
+#include <argos3/core/simulator/entity/embodied_entity.h>
+
+/* dyn2d model + chipmunk body */
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_single_body_object_model.h>
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/chipmunk-physics/include/chipmunk.h>
 
@@ -17,9 +21,9 @@ using namespace argos;
 static constexpr Real WIND_IMPULSE_SCALE = 3.5;
 
 /* ------------------------------------------------------------------ */
-void CEPuck2AirResistance::Init(TConfigurationNode& t_node) {
+void CAirResistance::Init(TConfigurationNode& t_node) {
 
-   /* device handles */
+   /* generic device handles */
    m_pcWheels = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcPos    = GetSensor  <CCI_PositioningSensor>           ("positioning");
 
@@ -40,41 +44,44 @@ void CEPuck2AirResistance::Init(TConfigurationNode& t_node) {
 }
 
 /* ------------------------------------------------------------------ */
-void CEPuck2AirResistance::LazyInitBody() {
+void CAirResistance::LazyInitBody() {
    if(m_bBodyReady) return;
 
-   auto& cEntity   = CSimulator::GetInstance().GetSpace().GetEntity(GetId());
-   auto& cEmbodied = *dynamic_cast<CEmbodiedEntity*>(
-        &static_cast<CComposableEntity&>(cEntity).GetComponent("body"));
+   /* get this controller's entity and required components */
+   CEntity& cEntity = CSimulator::GetInstance().GetSpace().GetEntity(GetId());
+
+   auto& cComposable = dynamic_cast<CComposableEntity&>(cEntity);
+   auto& cEmbodied   = *dynamic_cast<CEmbodiedEntity*>(
+                          &cComposable.GetComponent("body"));
 
    auto* pcModel = dynamic_cast<CDynamics2DSingleBodyObjectModel*>(
                      &cEmbodied.GetPhysicsModel("dyn2d"));
    if(!pcModel)
-       THROW_ARGOSEXCEPTION("No dyn2d model for " << GetId());
+      THROW_ARGOSEXCEPTION("No dyn2d model for " << GetId());
 
    m_ptBody     = pcModel->GetBody();
    m_bBodyReady = true;
 }
 
 /* ------------------------------------------------------------------ */
-void CEPuck2AirResistance::ControlStep() {
+void CAirResistance::ControlStep() {
 
    LazyInitBody();
 
-    /* 2. apply wind impulse once per tick --------------------------- */
-    Real mass = cpBodyGetMass(m_ptBody);          // ≈ 0.039 kg
-    CVector2 J = (m_cWindCms / 100.0) * mass * WIND_IMPULSE_SCALE;
+   /* 2. apply wind impulse once per tick ---------------------------- */
+   Real mass = cpBodyGetMass(m_ptBody);            // robot mass (kg)
+   CVector2 J = (m_cWindCms / 100.0) * mass * WIND_IMPULSE_SCALE;
 
-    cpBodyApplyImpulse(m_ptBody,
-                       cpv(J.GetX(), J.GetY()),
-                       cpvzero);
+   cpBodyApplyImpulse(m_ptBody,
+                      cpv(J.GetX(), J.GetY()),
+                      cpvzero);
 
-   /* 1. drive forward --------------------------------------------- */
+   /* 1. drive forward ---------------------------------------------- */
    m_pcWheels->SetLinearVelocity(m_fBaseCms, m_fBaseCms);
 
-    // TODO: addResistanceControlStep() that will contain wind handling and Lazy init
+   // TODO: addResistanceControlStep() to hold wind handling + lazy init
 }
 
 /* ------------------------------------------------------------------ */
-REGISTER_CONTROLLER(CEPuck2AirResistance,
-                    "epuck2_air_resistance_controller")
+REGISTER_CONTROLLER(CAirResistance,
+                    "air_resistance_controller")
