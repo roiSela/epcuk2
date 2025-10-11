@@ -18,6 +18,23 @@
 
 using namespace argos;
 
+/* ----- Post-step wind impulse ----- */
+struct SWindPostData {
+   cpBody* body;
+   cpVect  J;
+};
+
+static void ApplyWindPostStep(cpSpace* /*space*/, void* key, void* data) {
+   /* one per body per step (key == body) */
+   SWindPostData* p = static_cast<SWindPostData*>(data);
+   if(p && p->body) {
+      cpBodyActivate(p->body);                              // ensure awake
+      cpBodyApplyImpulse(p->body, p->J, cpvzero);           // apply at COM
+   }
+   delete p;                                                // cleanup
+}
+
+
 /* --------------------------------------------------------------- */
 void CAirResistance::Init(TConfigurationNode& t_node)
 {
@@ -146,9 +163,20 @@ void CAirResistance::ApplyWindImpulse()
    const CVector2 eff = ComputeEffectiveWind();
    if(eff.Length() < 1e-9) return;
 
+   /* compute impulse exactly as you did */
    const Real mass = cpBodyGetMass(m_ptBody);
-   const CVector2 J = (eff / 100.0) * mass * WIND_IMPULSE_SCALE;
-   cpBodyApplyImpulse(m_ptBody, cpv(J.GetX(), J.GetY()), cpvzero);
+   const CVector2 Jv = (eff / 100.0) * mass * WIND_IMPULSE_SCALE;
+
+   /* schedule it to run AFTER this physics step finishes */
+   auto& dyn2d = dynamic_cast<CDynamics2DEngine&>(
+      CSimulator::GetInstance().GetPhysicsEngine("dyn2d"));
+   cpSpace* space = dyn2d.GetPhysicsSpace();
+
+   /* allocate payload once per step; key = body so only one post-step per body runs */
+   auto* payload = new SWindPostData{ m_ptBody, cpv(Jv.GetX(), Jv.GetY()) };
+
+   /* Register post-step: will fire at the end of the current step */
+   cpSpaceAddPostStepCallback(space, ApplyWindPostStep, m_ptBody, payload);
 }
 
 /* --------------------------------------------------------------- */
