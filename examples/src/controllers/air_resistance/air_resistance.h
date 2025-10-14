@@ -13,13 +13,6 @@ struct cpBody;
 
 namespace argos {
 
-   /**
-    * Air resistance controller with wind blocking using RAB-only geometry.
-    * - Robots broadcast a 1-byte radius (mm) each tick via RAB actuator.
-    * - Neighbors reconstruct relative vectors from RAB range+bearing and own yaw.
-    * - Blocking reduction is computed from lateral coverage and distance (sqrt decay).
-    * - No robot-specific strings or hand-tuned wake constants.
-    */
    class CAirResistance final : public CCI_Controller {
 
    public:
@@ -31,8 +24,10 @@ namespace argos {
    private:
       /* physics + wind handling */
       void EnsurePhysicsHandle();
-      void ApplyWindImpulse();
-      void HandleAerodynamicsStep();
+      void ApplyWindImpulse();                 // adds to accumulator
+      void DriveImpulse(Real velocity_cm_s);   // adds to accumulator
+      void HandleAerodynamicsPreStep();        // reset + wind + broadcast
+      void HandleAerodynamicsPostStep();       // schedule single post-step to apply sum
 
       /* blocking (returns true if any neighbor provides reduction; sets [0,1]) */
       bool     IsBlockedByRAB(Real& fOutReduction) const;
@@ -40,17 +35,17 @@ namespace argos {
       Real     GetYawRadians() const;
 
       /* devices */
-      CCI_DifferentialSteeringActuator* m_pcWheels = nullptr;
+      CCI_DifferentialSteeringActuator* m_pcWheels = nullptr; // unused when driving by impulse
       CCI_PositioningSensor*            m_pcPos    = nullptr;
       CCI_RangeAndBearingSensor*        m_pcRABSens= nullptr;
       CCI_RangeAndBearingActuator*      m_pcRABAct = nullptr;
 
       /* params */
-      Real     m_fBaseCms = 5.0f;  /* wheel command (cm/s) */
-      CVector2 m_cWindCms;         /* global wind vector (cm/s) */
+      Real     m_fBaseCms = 5.0f;  /* desired forward speed, cm/s */
+      CVector2 m_cWindCms;         /* global wind vector, cm/s */
 
       /* impulse scaling for Chipmunk */
-      static constexpr Real WIND_IMPULSE_SCALE = 4.25f;
+      static constexpr Real WIND_IMPULSE_SCALE = 5.0f;
 
       /* simple fallback radius broadcast (meters) */
       Real m_fSelfRadiusM = 0.04f;
@@ -58,8 +53,12 @@ namespace argos {
       /* cached physics */
       bool     m_bBodyReady = false;
       cpBody*  m_ptBody     = nullptr;
+
+      /* per-tick accumulated impulse (world frame) */
+      CVector2 m_cAccumImpulse;    // J = (cm/s)/100 * mass * WIND_IMPULSE_SCALE
    };
 
 } /* namespace argos */
 
 #endif /* AIR_RESISTANCE_H */
+

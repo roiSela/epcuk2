@@ -11,6 +11,7 @@
 #include <argos3/core/simulator/entity/embodied_entity.h>
 
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_single_body_object_model.h>
+#include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_engine.h>
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/chipmunk-physics/include/chipmunk.h>
 
 #include <algorithm>
@@ -18,22 +19,20 @@
 
 using namespace argos;
 
-/* ----- Post-step wind impulse ----- */
+/* ----- Post-step: apply accumulated impulse (after collisions) ----- */
 struct SWindPostData {
    cpBody* body;
    cpVect  J;
 };
 
-static void ApplyWindPostStep(cpSpace* /*space*/, void* key, void* data) {
-   /* one per body per step (key == body) */
+static void ApplyAccumPostStep(cpSpace* /*space*/, void* /*key*/, void* data) {
    SWindPostData* p = static_cast<SWindPostData*>(data);
    if(p && p->body) {
-      cpBodyActivate(p->body);                              // ensure awake
-      cpBodyApplyImpulse(p->body, p->J, cpvzero);           // apply at COM
+      cpBodyActivate(p->body);
+      cpBodyApplyImpulse(p->body, p->J, cpvzero);  // at COM
    }
-   delete p;                                                // cleanup
+   delete p;
 }
-
 
 /* --------------------------------------------------------------- */
 void CAirResistance::Init(TConfigurationNode& t_node)
@@ -129,7 +128,6 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
 
       /* cross-section coverage: 1 at centerline, 0 at edge */
       const Real coverage = std::max(0.0, 1.0 - (lat / std::max(r_occ, 1e-6)));
-
       if(coverage <= 0.0) continue;
 
       /* slower distance decay to keep effect visible at ~30cm */
@@ -158,50 +156,80 @@ CVector2 CAirResistance::ComputeEffectiveWind() const
 }
 
 /* --------------------------------------------------------------- */
+/* Adds wind impulse to the per-tick accumulator */
 void CAirResistance::ApplyWindImpulse()
 {
    const CVector2 eff = ComputeEffectiveWind();
    if(eff.Length() < 1e-9) return;
 
-   /* compute impulse exactly as you did */
    const Real mass = cpBodyGetMass(m_ptBody);
    const CVector2 Jv = (eff / 100.0) * mass * WIND_IMPULSE_SCALE;
 
-   /* schedule it to run AFTER this physics step finishes */
+   m_cAccumImpulse += Jv;
+}
+
+/* Adds drive impulse (forward along yaw) to the per-tick accumulator */
+void CAirResistance::DriveImpulse(Real velocity_cm_s)
+{
+   const Real yaw = GetYawRadians();
+   const CVector2 fwd(std::cos(yaw), std::sin(yaw));
+
+   const CVector2 v_cm_s = fwd * velocity_cm_s;
+   const Real      mass  = cpBodyGetMass(m_ptBody);
+   const CVector2  Jv    = (v_cm_s / 100.0) * mass * WIND_IMPULSE_SCALE;
+
+   m_cAccumImpulse += Jv;
+}
+
+/* --------------------------------------------------------------- */
+/* PRE: reset + wind + broadcast; no scheduling here */
+void CAirResistance::HandleAerodynamicsPreStep()
+{
+   EnsurePhysicsHandle();
+
+   /* reset per-tick accumulator */
+   m_cAccumImpulse.Set(0.0f, 0.0f);
+
+   /* wind contribution */
+   ApplyWindImpulse();
+
+   /* RAB broadcast: radius in mm */
+   if(m_pcRABAct) {
+      UInt8 r_mm = static_cast<UInt8>(
+         std::min<Real>(255.0, std::round(m_fSelfRadiusM * 1000.0)));
+      CByteArray data(1, r_mm);
+      m_pcRABAct->SetData(data);
+   }
+}
+
+/* POST: schedule one post-step to apply the summed impulse */
+void CAirResistance::HandleAerodynamicsPostStep()
+{
    auto& dyn2d = dynamic_cast<CDynamics2DEngine&>(
       CSimulator::GetInstance().GetPhysicsEngine("dyn2d"));
    cpSpace* space = dyn2d.GetPhysicsSpace();
 
-   /* allocate payload once per step; key = body so only one post-step per body runs */
-   auto* payload = new SWindPostData{ m_ptBody, cpv(Jv.GetX(), Jv.GetY()) };
-
-   /* Register post-step: will fire at the end of the current step */
-   cpSpaceAddPostStepCallback(space, ApplyWindPostStep, m_ptBody, payload);
-}
-
-/* --------------------------------------------------------------- */
-void CAirResistance::HandleAerodynamicsStep()
-{
-   EnsurePhysicsHandle();
-   ApplyWindImpulse();
+   auto* payload = new SWindPostData{
+      m_ptBody,
+      cpv(m_cAccumImpulse.GetX(), m_cAccumImpulse.GetY())
+   };
+   /* key = body → called once per body after step */
+   cpSpaceAddPostStepCallback(space, ApplyAccumPostStep, m_ptBody, payload);
 }
 
 /* --------------------------------------------------------------- */
 void CAirResistance::ControlStep()
 {
-   /* physics pre-step (includes blocking) */
-   HandleAerodynamicsStep();
+   /* 1) before drive: reset, add wind, broadcast RAB */
+   HandleAerodynamicsPreStep();
 
-   /* simple forward drive (demo) */
-   m_pcWheels->SetLinearVelocity(m_fBaseCms, m_fBaseCms);
+   /* 2) drive adds to accumulator */
+   DriveImpulse(m_fBaseCms);
 
-   /* broadcast presence + radius in mm */
-   if(m_pcRABAct) {
-      UInt8 r_mm = static_cast<UInt8>(std::min<Real>(255.0, std::round(m_fSelfRadiusM * 1000.0))); // Convert my radius from meters to millimeters, If my radius is 0.085 meters → 85 mm
-      CByteArray data(1, r_mm); //  Put that number into a 1-byte message
-      m_pcRABAct->SetData(data); // Broadcast this message wirelessly
-   }
+   /* 3) schedule a single post-step to apply (wind + drive) */
+   HandleAerodynamicsPostStep();
 }
 
 /* --------------------------------------------------------------- */
 REGISTER_CONTROLLER(CAirResistance, "air_resistance_controller")
+
