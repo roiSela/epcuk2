@@ -98,15 +98,15 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
     *
     * Model overview (per neighbor):
     *   - Treat the upwind neighbor as casting a downwind "shadow".
-    *   - Shadow strength = LateralCoverage * LongitudinalFade, then (optionally) gamma-boosted.
+    *   - Shadow strength = LateralCoverage * ShadowFade, then (optionally) gamma-boosted.
     *
     * Lateral coverage (sideways tolerance):
     *   - Gaussian in the lateral offset measured in units of blocker radii.
-    *   - Parameter k_w ≈ how many radii give strong coverage sideways (typ. 1.5–2.5).
+    *   - lateral_reach_radii ≈ how many radii give strong coverage sideways (typ. 1.5–2.5).
     *
-    * Longitudinal fade (downwind reach):
+    * Shadow fade (downwind reach):
     *   - Smoothstep over distance measured in units of blocker radii.
-    *   - Parameter k_r ≈ how many radii behind until the effect fades to ~0 (typ. 3–5).
+    *   - shadow_length_radii ≈ distance (in radii) until the effect fades to ~0 (typ. 3–5).
     *
     * Notes:
     *   - All geometry is in meters.
@@ -123,17 +123,17 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
    if(m_cWindCms.Length() < 1e-9) return false;
 
    /* --- Tunables (geometry-space; not exposed via XML) --- */
-   const Real k_w = 2.0;   /* lateral reach in blocker radii (Gaussian sigma = k_w * r) */
-   const Real k_r = 4.0;   /* downwind fade length in blocker radii (smoothstep to 0 at k_r radii) */
-   const Real GAMMA = 2.0; /* non-linear boost: 1 - (1 - x)^GAMMA ; set to 1.0 to disable */
+   const Real lateral_reach_radii  = 2.0;  /* lateral Gaussian reach in blocker radii */
+   const Real shadow_length_radii  = 4.0;  /* downwind fade length in blocker radii */
+   const Real gamma_boost          = 2.0;  /* non-linear boost: 1 - (1 - x)^gamma_boost ; 1.0 disables */
 
    /* Sanity window for advertised radius (meters) */
    constexpr Real ADV_RADIUS_MIN_M = 0.005; /* 5 mm  */
    constexpr Real ADV_RADIUS_MAX_M = 0.20;  /* 20 cm */
 
    /* Unit wind direction in world frame */
-   CVector2 wind_dir = m_cWindCms;
-   wind_dir.Normalize();
+   CVector2 wind_dir_world = m_cWindCms;
+   wind_dir_world.Normalize();
 
    const Real yaw_world = GetYawRadians();
    const auto& readings = m_pcRABSens->GetReadings();
@@ -159,38 +159,39 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
       const Real bearing_world = yaw_world + rcv.HorizontalBearing.GetValue();
 
       /* Vector ME -> OTHER (m, world) */
-      const CVector2 me_to_other(range_m * std::cos(bearing_world),
-                                 range_m * std::sin(bearing_world));
-      /* Vector OTHER -> ME */
-      const CVector2 other_to_me = -me_to_other;
+      const CVector2 me_to_other_m(range_m * std::cos(bearing_world),
+                                   range_m * std::sin(bearing_world));
 
-      /* Along-wind (m): only consider UPWIND neighbors (positive projection) */
-      const Real along_wind_m = other_to_me.DotProduct(wind_dir);
-      if(along_wind_m <= 0.0) continue; /* neighbor downwind -> no shielding */
+      /* Vector OTHER -> ME (from neighbor toward me) */
+      const CVector2 other_to_me_m = -me_to_other_m;
+
+      /* Along-wind component (m): only consider UPWIND neighbors (positive projection) */
+      const Real along_wind_m = other_to_me_m.DotProduct(wind_dir_world);
+      if(along_wind_m <= 0.0) continue; /* neighbor is downwind -> no shielding */
 
       /* Lateral offset from wind centerline (m) */
-      const CVector2 lateral_vec      = other_to_me - (wind_dir * along_wind_m);
-      const Real     lateral_offset_m = lateral_vec.Length();
+      const CVector2 lateral_vec_m   = other_to_me_m - (wind_dir_world * along_wind_m);
+      const Real     lateral_offset_m = lateral_vec_m.Length();
 
       /* ---------- Lateral coverage: Gaussian over radii ---------- */
-      const Real sigma = std::max<Real>(1e-6, k_w * blocker_radius_m);
-      const Real ratio_lat = lateral_offset_m / sigma;
-      const Real lateral_coverage = std::exp(-0.5 * ratio_lat * ratio_lat);
+      const Real lateral_sigma_m = std::max<Real>(1e-6, lateral_reach_radii * blocker_radius_m);
+      const Real lateral_norm    = lateral_offset_m / lateral_sigma_m;
+      const Real lateral_coverage = std::exp(-0.5 * lateral_norm * lateral_norm);
       if(lateral_coverage <= 1e-6) continue; /* too far sideways */
 
-      /* ---------- Longitudinal fade: smoothstep over k_r radii ---------- */
-      const Real denom_m = std::max<Real>(1e-6, k_r * blocker_radius_m);
-      const Real s = std::clamp(along_wind_m / denom_m, 0.0, 1.0);
-      /* smoothstep: 1 at s=0 (touching), 0 at s=1 (>= k_r radii) */
-      const Real distance_factor = 1.0 - (3.0*s*s - 2.0*s*s*s);
+      /* ---------- Shadow fade: smoothstep over shadow_length_radii ---------- */
+      const Real fade_denominator_m = std::max<Real>(1e-6, shadow_length_radii * blocker_radius_m);
+      const Real fade_param         = std::clamp(along_wind_m / fade_denominator_m, 0.0, 1.0);
+      /* smoothstep: 1 at 0 (touching), 0 at 1 (>= shadow_length_radii radii) */
+      const Real shadow_fade = 1.0 - (3.0 * fade_param * fade_param - 2.0 * fade_param * fade_param * fade_param);
 
-      /* ---------- Combine & gamma boost (visual tuning) ---------- */
-      Real reduction = lateral_coverage * distance_factor;
+      /* ---------- Combine & optional gamma remap ---------- */
+      Real reduction = lateral_coverage * shadow_fade;
 
-      if(GAMMA != 1.0) {
-         /* map x -> 1 - (1 - x)^GAMMA ; boosts mid-range without exceeding 1 */
+      if(gamma_boost != 1.0) {
+         /* map x -> 1 - (1 - x)^gamma_boost ; boosts mid-range without exceeding 1 */
          const Real one_minus = std::max<Real>(0.0, 1.0 - reduction);
-         reduction = 1.0 - std::pow(one_minus, std::max<Real>(1.0, GAMMA));
+         reduction = 1.0 - std::pow(one_minus, std::max<Real>(1.0, gamma_boost));
       }
 
       reduction = std::clamp(reduction, 0.0, 1.0);
@@ -203,13 +204,14 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
       //     << " lat=" << lateral_offset_m
       //     << " r=" << blocker_radius_m
       //     << " lat_cov=" << lateral_coverage
-      //     << " dist=" << distance_factor
+      //     << " fade=" << shadow_fade
       //     << " red=" << reduction << std::endl;
       */
    }
 
    return any_blocker && fOutReduction > 1e-6;
 }
+
 
 
 /* --------------------------------------------------------------- */
