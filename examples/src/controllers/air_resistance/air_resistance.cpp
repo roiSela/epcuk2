@@ -85,61 +85,51 @@ Real CAirResistance::GetYawRadians() const
 }
 
 /* --------------------------------------------------------------- */
-/**
- * Determine whether any upwind neighbor aerodynamically shields this robot,
- * and by how much to reduce the global wind as a result.
- *
- * Output:
- *   fOutReduction ∈ [0, 1]
- *     0.0 => no shielding (full wind)
- *     1.0 => full shielding (no wind)
- *
- * Model overview (per neighbor):
- *   - We treat the upwind neighbor as casting a "shadow" downwind.
- *   - The shadow has:
- *       (1) a lateral extent (how far to the side you can be and still feel it),
- *       (2) a longitudinal fade (how the effect weakens as you get farther behind).
- *
- * Lateral "width" (sideways tolerance):
- *   coverage = 1 - (lateral_offset / effective_lateral_radius)^WIDTH_POWER, clamped to [0,1]
- *   where effective_lateral_radius = WIDTH_SCALE * blocker_radius_m
- *   Defaults: WIDTH_SCALE=1.0 (one blocker radius), WIDTH_POWER=1.0 (linear)
- *
- * Longitudinal "length" (downwind reach/fade):
- *   distance_factor = ( blocker_radius_m / (along_wind_m * LENGTH_SCALE) )^(LENGTH_ALPHA), clamped to [0,1]
- *   Defaults: LENGTH_SCALE=100.0 (short reach; matches previous feel), LENGTH_ALPHA=0.5 (sqrt)
- *
- * Notes:
- *   - All distances in meters.
- *   - RAB range (rcv.Range) arrives in centimeters and is converted to meters here.
- *   - The neighbor may advertise an "effective blocking radius" in Data[0] (millimeters).
- *     We accept only sane values in [ADV_RADIUS_MIN_M, ADV_RADIUS_MAX_M]; otherwise we
- *     fall back to m_fSelfRadiusM.
- *   - We take the maximum reduction across all valid upwind neighbors.
- */
 bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
 {
+   /*
+    * Determine whether any upwind neighbor aerodynamically shields this robot,
+    * and by how much to reduce the global wind as a result.
+    *
+    * Output:
+    *   fOutReduction ∈ [0, 1]
+    *     0.0 => no shielding (full wind)
+    *     1.0 => full shielding (no wind)
+    *
+    * Model overview (per neighbor):
+    *   - Treat the upwind neighbor as casting a downwind "shadow".
+    *   - Shadow strength = LateralCoverage * LongitudinalFade, then (optionally) gamma-boosted.
+    *
+    * Lateral coverage (sideways tolerance):
+    *   - Gaussian in the lateral offset measured in units of blocker radii.
+    *   - Parameter k_w ≈ how many radii give strong coverage sideways (typ. 1.5–2.5).
+    *
+    * Longitudinal fade (downwind reach):
+    *   - Smoothstep over distance measured in units of blocker radii.
+    *   - Parameter k_r ≈ how many radii behind until the effect fades to ~0 (typ. 3–5).
+    *
+    * Notes:
+    *   - All geometry is in meters.
+    *   - RAB range arrives in centimeters -> converted to meters here.
+    *   - Neighbor may advertise an effective radius in Data[0] as millimeters.
+    *     If missing/absurd, we fall back to m_fSelfRadiusM.
+    *   - We take the maximum reduction across valid upwind neighbors.
+    */
+
    fOutReduction = 0.0;
 
-   /* Guard conditions */
+   /* Guards */
    if(!m_pcPos || !m_pcRABSens) return false;
    if(m_cWindCms.Length() < 1e-9) return false;
 
-   /* ---------------- Tunable constants (internal, no XML) ---------------- */
-
-   /* Width controls (sideways tolerance) */
-   constexpr Real WIDTH_SCALE = 1.0;  /* multiply blocker radius for lateral reach (1.0 = one radius) */
-   constexpr Real WIDTH_POWER = 1.0;  /* lateral falloff exponent (1.0=linear, 2.0=quadratic, etc.) */
-
-   /* Length controls (downwind reach) */
-   constexpr Real LENGTH_SCALE = 100.0; /* multiplies along-wind distance inside falloff; higher = shorter reach */
-   constexpr Real LENGTH_ALPHA = 0.5;   /* distance exponent; 0.5 = sqrt (gentle), 1.0 ≈ 1/s (steeper) */
+   /* --- Tunables (geometry-space; not exposed via XML) --- */
+   const Real k_w = 2.0;   /* lateral reach in blocker radii (Gaussian sigma = k_w * r) */
+   const Real k_r = 4.0;   /* downwind fade length in blocker radii (smoothstep to 0 at k_r radii) */
+   const Real GAMMA = 2.0; /* non-linear boost: 1 - (1 - x)^GAMMA ; set to 1.0 to disable */
 
    /* Sanity window for advertised radius (meters) */
    constexpr Real ADV_RADIUS_MIN_M = 0.005; /* 5 mm  */
    constexpr Real ADV_RADIUS_MAX_M = 0.20;  /* 20 cm */
-
-   /* --------------------------------------------------------------------- */
 
    /* Unit wind direction in world frame */
    CVector2 wind_dir = m_cWindCms;
@@ -151,69 +141,68 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
    bool any_blocker = false;
 
    for(const auto& rcv : readings) {
-      /* ---- Range & bearing to neighbor ----
-         RAB range is provided in centimeters → convert to meters. */
+      /* Range (cm -> m) */
       const Real range_cm = rcv.Range;
       if(range_cm <= 1e-6) continue;
       const Real range_m = range_cm * 0.01;
 
-      /* Neighbor-advertised effective radius (byte0: millimeters → meters), with sanity window.
-         If absent or absurd, use our local default m_fSelfRadiusM. */
-      Real blocker_radius_m = m_fSelfRadiusM; /* default ~0.04 m for e-puck2 */
+      /* Blocker radius (advertised mm -> m), sanity-clamped */
+      Real blocker_radius_m = m_fSelfRadiusM; /* default (~0.04 m for e-puck2) */
       if(rcv.Data.Size() >= 1) {
-         const Real advertised_radius_m = static_cast<Real>(rcv.Data[0]) * 0.001; /* mm → m */
+         const Real advertised_radius_m = static_cast<Real>(rcv.Data[0]) * 0.001;
          if(advertised_radius_m > ADV_RADIUS_MIN_M && advertised_radius_m < ADV_RADIUS_MAX_M) {
             blocker_radius_m = advertised_radius_m;
          }
       }
 
-      /* Transform sensor-relative bearing to world frame and build vectors */
+      /* Bearing to neighbor -> world frame */
       const Real bearing_world = yaw_world + rcv.HorizontalBearing.GetValue();
 
-      /* Vector from ME → OTHER (meters, world frame) */
+      /* Vector ME -> OTHER (m, world) */
       const CVector2 me_to_other(range_m * std::cos(bearing_world),
                                  range_m * std::sin(bearing_world));
-
-      /* Vector from OTHER → ME */
+      /* Vector OTHER -> ME */
       const CVector2 other_to_me = -me_to_other;
 
-      /* Along-wind component (meters): only consider UPWIND neighbors (positive projection) */
+      /* Along-wind (m): only consider UPWIND neighbors (positive projection) */
       const Real along_wind_m = other_to_me.DotProduct(wind_dir);
-      if(along_wind_m <= 0.0) continue; /* neighbor is downwind → no shielding */
+      if(along_wind_m <= 0.0) continue; /* neighbor downwind -> no shielding */
 
-      /* Lateral (perpendicular) offset from wind centerline (meters) */
+      /* Lateral offset from wind centerline (m) */
       const CVector2 lateral_vec      = other_to_me - (wind_dir * along_wind_m);
       const Real     lateral_offset_m = lateral_vec.Length();
 
-      /* ---------------- Lateral coverage (WIDTH) ----------------
-         Any shielding if lateral_offset < effective_lateral_radius.
-         Falloff shape is controlled by WIDTH_POWER. */
-      const Real effective_lateral_radius_m =
-         std::max<Real>(1e-6, WIDTH_SCALE * blocker_radius_m);
+      /* ---------- Lateral coverage: Gaussian over radii ---------- */
+      const Real sigma = std::max<Real>(1e-6, k_w * blocker_radius_m);
+      const Real ratio_lat = lateral_offset_m / sigma;
+      const Real lateral_coverage = std::exp(-0.5 * ratio_lat * ratio_lat);
+      if(lateral_coverage <= 1e-6) continue; /* too far sideways */
 
-      const Real lat_norm = std::min<Real>(1.0, lateral_offset_m / effective_lateral_radius_m);
+      /* ---------- Longitudinal fade: smoothstep over k_r radii ---------- */
+      const Real denom_m = std::max<Real>(1e-6, k_r * blocker_radius_m);
+      const Real s = std::clamp(along_wind_m / denom_m, 0.0, 1.0);
+      /* smoothstep: 1 at s=0 (touching), 0 at s=1 (>= k_r radii) */
+      const Real distance_factor = 1.0 - (3.0*s*s - 2.0*s*s*s);
 
-      Real lateral_coverage = 1.0 - std::pow(lat_norm, std::max<Real>(1.0, WIDTH_POWER));
-      if(lateral_coverage <= 0.0) continue; /* too far to the side → no shielding */
+      /* ---------- Combine & gamma boost (visual tuning) ---------- */
+      Real reduction = lateral_coverage * distance_factor;
 
-      /* ---------------- Distance factor (LENGTH) ----------------
-         Tuned with LENGTH_SCALE and LENGTH_ALPHA for longitudinal reach/fade. */
-      const Real denom_m = std::max<Real>(along_wind_m * std::max<Real>(1e-6, LENGTH_SCALE), 1e-6);
-      const Real ratio   = std::min< Real >(1.0, blocker_radius_m / denom_m);
-      const Real distance_factor = std::pow(ratio, std::max< Real >(0.1, LENGTH_ALPHA));
+      if(GAMMA != 1.0) {
+         /* map x -> 1 - (1 - x)^GAMMA ; boosts mid-range without exceeding 1 */
+         const Real one_minus = std::max<Real>(0.0, 1.0 - reduction);
+         reduction = 1.0 - std::pow(one_minus, std::max<Real>(1.0, GAMMA));
+      }
 
-      /* Combined reduction from this neighbor (clamped) */
-      const Real reduction = std::clamp(lateral_coverage * distance_factor, 0.0, 1.0);
+      reduction = std::clamp(reduction, 0.0, 1.0);
 
       fOutReduction = std::max(fOutReduction, reduction);
       any_blocker   = true;
 
       /* Optional debug:
-      // LOG << "[blk] s=" << along_wind_m
+      // LOG << "[blk] along=" << along_wind_m
       //     << " lat=" << lateral_offset_m
-      //     << " r_blocker=" << blocker_radius_m
-      //     << " eff_lat_r=" << effective_lateral_radius_m
-      //     << " cov=" << lateral_coverage
+      //     << " r=" << blocker_radius_m
+      //     << " lat_cov=" << lateral_coverage
       //     << " dist=" << distance_factor
       //     << " red=" << reduction << std::endl;
       */
