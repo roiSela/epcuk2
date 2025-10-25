@@ -6,7 +6,7 @@
     </framework>
 
     <configuration>
-        <air_resistance angle_deg="0" magnitude="0.0"/>
+        <air_resistance angle_deg="0" magnitude="10.0"/>
     </configuration>
 
     <controllers>
