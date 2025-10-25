@@ -44,9 +44,6 @@ namespace argos {
       Real     m_fBaseCms = 5.0f;  /* desired forward speed, cm/s */
       CVector2 m_cWindCms;         /* global wind vector, cm/s */
 
-      /* impulse scaling for Chipmunk */
-      static constexpr Real WIND_IMPULSE_SCALE = 5.0f;
-
       /* simple fallback radius broadcast (meters) */
       Real m_fSelfRadiusM = 0.04f;
 

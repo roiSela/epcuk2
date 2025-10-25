@@ -244,7 +244,7 @@ void CAirResistance::ApplyWindImpulse()
    if(eff.Length() < 1e-9) return;
 
    const Real mass = cpBodyGetMass(m_ptBody);
-   const CVector2 Jv = (eff / 100.0) * mass * WIND_IMPULSE_SCALE;
+   const CVector2 Jv = (eff / 100.0) * mass;
 
    m_cAccumImpulse += Jv;
 }
@@ -257,7 +257,7 @@ void CAirResistance::DriveImpulse(Real velocity_cm_s)
 
    const CVector2 v_cm_s = fwd * velocity_cm_s;
    const Real      mass  = cpBodyGetMass(m_ptBody);
-   const CVector2  Jv    = (v_cm_s / 100.0) * mass * WIND_IMPULSE_SCALE;
+   const CVector2  Jv    = (v_cm_s / 100.0) * mass;
 
    m_cAccumImpulse += Jv;
 }
