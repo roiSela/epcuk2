@@ -34,7 +34,7 @@
 
         <!-- Downwind (same column), ~30 cm behind => clear reduction with sqrt falloff -->
         <e-puck2 id="2" rab_range="2" rab_data_size="1">
-            <body position="0.10,0.00,0" orientation="180,0,0"/>
+            <body position="0.10,0.01,0" orientation="180,0,0"/>
             <controller config="airbot"/>
         </e-puck2>
 

@@ -85,61 +85,127 @@ Real CAirResistance::GetYawRadians() const
 }
 
 /* --------------------------------------------------------------- */
+/**
+ * Computes whether any upwind neighbor (from RAB) aerodynamically “shields” this robot
+ * and, if so, how much the global wind should be reduced.
+ *
+ * Output:
+ *   fOutReduction ∈ [0, 1] — 0=no shielding (full wind), 1=full shielding (no wind)
+ *
+ * Conventions & Units:
+ *   - World positions, radii, and wind magnitudes are in METERS (and cm/s for wind speed vector magnitude).
+ *   - RAB range (rcv.Range) arrives in CENTIMETERS → converted to meters here.
+ *   - We keep a linear lateral coverage and a tuned distance falloff to match desired motion feel.
+ *
+ * Shadow model (one neighbor):
+ *   1) Lateral coverage in [0,1]:
+ *        coverage = max(0, 1 - lateral_offset_m / blocker_radius_m)
+ *      → full on the wind centerline; fades linearly to 0 at one radius aside.
+ *
+ *   2) Distance falloff in [0,1]:
+ *        distance_factor = sqrt( blocker_radius_m / (along_wind_m * S_ALONG_SCALE) ), capped at 1
+ *      → weaker farther behind; S_ALONG_SCALE (100) preserves the original “feel”.
+ *
+ *   3) Combined reduction per neighbor:
+ *        reduction = coverage * distance_factor
+ *
+ *   4) We take the maximum reduction over all valid upwind neighbors.
+ */
 bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
 {
    fOutReduction = 0.0;
+
+   /* Basic guards */
    if(!m_pcPos || !m_pcRABSens) return false;
    if(m_cWindCms.Length() < 1e-9) return false;
 
-   /* unit wind */
-   CVector2 wdir = m_cWindCms;
-   wdir.Normalize();
+   /* --- Tunable constants --- */
+   /* Scale for along-wind distance inside the falloff; 100 ≈ use centimeters for s. */
+   constexpr Real S_ALONG_SCALE = 100.0;
 
-   const Real yaw = GetYawRadians();
+   /* Acceptable advertised blocker radius window [m]; reject absurd values. */
+   constexpr Real ADV_RADIUS_MIN_M = 0.005;  /* 5 mm  */
+   constexpr Real ADV_RADIUS_MAX_M = 0.20;   /* 20 cm */
 
-   const auto& rs = m_pcRABSens->GetReadings();
-   bool bAny = false;
+   /* Wind direction (unit vector in world frame) */
+   CVector2 wind_dir = m_cWindCms;
+   wind_dir.Normalize();
 
-   for(const auto& rcv : rs) {
-      const Real range = rcv.Range;
-      if(range <= 1e-6) continue;
+   const Real yaw_world = GetYawRadians();
+   const auto& readings = m_pcRABSens->GetReadings();
 
-      /* neighbor-announced radius (meters) in byte0; fallback to ours */
-      Real r_occ = m_fSelfRadiusM;
+   bool any_blocker = false;
+
+   for(const auto& rcv : readings) {
+
+      /* --- Range and bearing to neighbor --- */
+
+      /* RAB range is in centimeters → convert to meters */
+      const Real range_cm = rcv.Range;
+      if(range_cm <= 1e-6) continue;
+      const Real range_m  = range_cm * 0.01;
+
+      /* Neighbor-advertised radius (byte0 = mm → m), with sanity window.
+         If missing or absurd, fall back to our default self radius. */
+      Real blocker_radius_m = m_fSelfRadiusM;
       if(rcv.Data.Size() >= 1) {
-         r_occ = static_cast<Real>(rcv.Data[0]) * 0.001; /* mm -> m */
-         if(r_occ <= 0.0) r_occ = m_fSelfRadiusM;
+         const Real advertised_radius_m = static_cast<Real>(rcv.Data[0]) * 0.001; /* mm → m */
+         if(advertised_radius_m > ADV_RADIUS_MIN_M && advertised_radius_m < ADV_RADIUS_MAX_M) {
+            blocker_radius_m = advertised_radius_m;
+         }
       }
 
-      /* world vector me->other */
-      const Real ang_world = yaw + rcv.HorizontalBearing.GetValue();
-      const CVector2 v_me_other(range * std::cos(ang_world),
-                                range * std::sin(ang_world));
+      /* Transform sensor-relative bearing into world frame */
+      const Real bearing_world = yaw_world + rcv.HorizontalBearing.GetValue();
 
-      /* other->me */
-      const CVector2 r = -v_me_other;
+      /* Vector from ME → OTHER (world frame, meters) */
+      const CVector2 me_to_other(range_m * std::cos(bearing_world),
+                                 range_m * std::sin(bearing_world));
 
-      /* along-wind distance and lateral offset */
-      const Real s = r.DotProduct(wdir);     /* meters */
-      if(s <= 0.0) continue;                 /* only downwind neighbors */
+      /* Vector from OTHER → ME (reverse) */
+      const CVector2 other_to_me = -me_to_other;
 
-      const CVector2 lateral = r - (wdir * s);
-      const Real     lat     = lateral.Length();
+      /* --- Decompose OTHER→ME into along-wind and lateral components --- */
 
-      /* cross-section coverage: 1 at centerline, 0 at edge */
-      const Real coverage = std::max(0.0, 1.0 - (lat / std::max(r_occ, 1e-6)));
-      if(coverage <= 0.0) continue;
+      /* Along-wind distance (meters). We only consider UPWIND neighbors (s > 0). */
+      const Real along_wind_m = other_to_me.DotProduct(wind_dir);
+      if(along_wind_m <= 0.0) continue;  /* neighbor is downwind of me → no block */
 
-      /* slower distance decay to keep effect visible at ~30cm */
-      const Real ratio = std::min(1.0, r_occ / std::max(s, 1e-6));
-      const Real distance_factor = std::sqrt(ratio);
+      /* Lateral offset from the wind centerline (meters) */
+      const CVector2 lateral_vec = other_to_me - (wind_dir * along_wind_m);
+      const Real     lateral_offset_m = lateral_vec.Length();
 
+      /* --- Lateral coverage [0,1]: full on centerline, linear fade to 0 at one radius --- */
+      const Real coverage = std::max(
+         0.0,
+         1.0 - (lateral_offset_m / std::max(blocker_radius_m, 1e-6))
+      );
+      if(coverage <= 0.0) continue;  /* too far to the side → no shielding */
+
+      /* --- Distance falloff [0,1]: tuned with S_ALONG_SCALE to match desired feel --- */
+      const Real denom_m = std::max(along_wind_m * S_ALONG_SCALE, 1e-6);
+      const Real ratio   = std::min(1.0, blocker_radius_m / denom_m);
+      const Real distance_factor = std::sqrt(ratio);  /* gentle 1/s^0.5 fade */
+
+      /* Combined reduction from this neighbor */
       const Real reduction = std::clamp(coverage * distance_factor, 0.0, 1.0);
+
       fOutReduction = std::max(fOutReduction, reduction);
-      bAny = true;
+      any_blocker = true;
+
+      /* Optional debug:
+      // LOG << "[blk] range_m=" << range_m
+      //     << " s=" << along_wind_m
+      //     << " lat=" << lateral_offset_m
+      //     << " r_blocker=" << blocker_radius_m
+      //     << " cov=" << coverage
+      //     << " dist=" << distance_factor
+      //     << " red=" << reduction
+      //     << std::endl;
+      */
    }
 
-   return bAny && fOutReduction > 1e-6;
+   return any_blocker && fOutReduction > 1e-6;
 }
 
 /* --------------------------------------------------------------- */
