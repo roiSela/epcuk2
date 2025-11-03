@@ -2,12 +2,12 @@
 <argos-configuration>
   <framework>
     <system threads="1"/>
-    <experiment length="600" ticks_per_second="10" random_seed="42"/>
+    <experiment length="600" ticks_per_second="15" random_seed="42"/>
   </framework>
 
   <configuration>
     <!-- Wind blows along +X; robots face 180° (into the wind, toward -X) -->
-    <air_resistance angle_deg="0" magnitude="10.0"/>
+    <air_resistance angle_deg="0" magnitude="15.0"/>
   </configuration>
 
   <controllers>
@@ -22,7 +22,7 @@
         <positioning implementation="default"/>
         <range_and_bearing implementation="medium" medium="rab" show_rays="true"/>
       </sensors>
-      <params velocity="10.0"/>
+      <params velocity="15.0"/>
     </air_resistance_controller>
   </controllers>
 

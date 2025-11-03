@@ -123,9 +123,13 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
    if(m_cWindCms.Length() < 1e-9) return false;
 
    /* --- Tunables (geometry-space; not exposed via XML) --- */
-   const Real lateral_reach_radii  = 2.0;  /* lateral Gaussian reach in blocker radii */
+   const Real lateral_reach_radii  = 3.0;  /* lateral Gaussian reach in blocker radii */
    const Real shadow_length_radii  = 4.0;  /* downwind fade length in blocker radii */
    const Real gamma_boost          = 2.0;  /* non-linear boost: 1 - (1 - x)^gamma_boost ; 1.0 disables */
+
+   /* Robustness gate: require a minimum upwind separation to avoid side-by-side false positives.
+      A follower must be at least this many radii behind the blocker before any wake applies. */
+   const Real upwind_gate_radii    = 0.5;  /* ≥0.5 radii recommended for e-puck2 */
 
    /* Sanity window for advertised radius (meters) */
    constexpr Real ADV_RADIUS_MIN_M = 0.005; /* 5 mm  */
@@ -167,7 +171,10 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
 
       /* Along-wind component (m): only consider UPWIND neighbors (positive projection) */
       const Real along_wind_m = other_to_me_m.DotProduct(wind_dir_world);
-      if(along_wind_m <= 0.0) continue; /* neighbor is downwind -> no shielding */
+
+      /* --- Upwind gate: reject side-by-side or nearly-equal-X neighbors --- */
+      const Real gate_m = std::max<Real>(1e-6, upwind_gate_radii * blocker_radius_m);
+      if(along_wind_m <= gate_m) continue; /* not meaningfully upwind -> no shielding */
 
       /* Lateral offset from wind centerline (m) */
       const CVector2 lateral_vec_m   = other_to_me_m - (wind_dir_world * along_wind_m);
@@ -179,10 +186,12 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
       const Real lateral_coverage = std::exp(-0.5 * lateral_norm * lateral_norm);
       if(lateral_coverage <= 1e-6) continue; /* too far sideways */
 
-      /* ---------- Shadow fade: smoothstep over shadow_length_radii ---------- */
+      /* ---------- Shadow fade: smoothstep over shadow_length_radii ----------
+         Start the fade AFTER the upwind gate, so being just beyond the gate gives full strength (s=0). */
       const Real fade_denominator_m = std::max<Real>(1e-6, shadow_length_radii * blocker_radius_m);
-      const Real fade_param         = std::clamp(along_wind_m / fade_denominator_m, 0.0, 1.0);
-      /* smoothstep: 1 at 0 (touching), 0 at 1 (>= shadow_length_radii radii) */
+      const Real s_raw = (along_wind_m - gate_m) / fade_denominator_m;
+      const Real fade_param = std::clamp(s_raw, 0.0, 1.0);
+      /* smoothstep: 1 at 0 (just past the gate), 0 at 1 (beyond gate + shadow length) */
       const Real shadow_fade = 1.0 - (3.0 * fade_param * fade_param - 2.0 * fade_param * fade_param * fade_param);
 
       /* ---------- Combine & optional gamma remap ---------- */
@@ -211,8 +220,6 @@ bool CAirResistance::IsBlockedByRAB(Real& fOutReduction) const
 
    return any_blocker && fOutReduction > 1e-6;
 }
-
-
 
 /* --------------------------------------------------------------- */
 CVector2 CAirResistance::ComputeEffectiveWind() const
