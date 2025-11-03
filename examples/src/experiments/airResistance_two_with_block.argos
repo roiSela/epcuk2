@@ -35,12 +35,12 @@
 
     <!-- Two followers downwind, slightly spread in Y but still inside the shadow core -->
     <e-puck2 id="F1" rab_range="2" rab_data_size="1">
-      <body position="0.10,-0.12,0" orientation="180,0,0"/>
+      <body position="0.08,-0.12,0" orientation="180,0,0"/>
       <controller config="airbot"/>
     </e-puck2>
 
     <e-puck2 id="F2" rab_range="2" rab_data_size="1">
-      <body position="0.10,0.12,0" orientation="180,0,0"/>
+      <body position="0.08,0.12,0" orientation="180,0,0"/>
       <controller config="airbot"/>
     </e-puck2>
 

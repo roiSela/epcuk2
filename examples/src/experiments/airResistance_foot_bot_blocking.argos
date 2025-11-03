@@ -2,11 +2,12 @@
 <argos-configuration>
   <framework>
     <system threads="1"/>
-    <experiment length="600" ticks_per_second="10" random_seed="43"/>
+    <experiment length="600" ticks_per_second="15" random_seed="42"/>
   </framework>
 
   <configuration>
-    <air_resistance angle_deg="0" magnitude="10.0"/>
+    <!-- Wind blows along +X; robots face 180° (into the wind, toward -X) -->
+    <air_resistance angle_deg="0" magnitude="25.0"/>
   </configuration>
 
   <controllers>
@@ -21,22 +22,24 @@
         <positioning implementation="default"/>
         <range_and_bearing implementation="medium" medium="rab" show_rays="true"/>
       </sensors>
-      <params velocity="10.0"/>
+      <params velocity="25.0" self_radius_m="0.85"/>
     </air_resistance_controller>
   </controllers>
 
+  <!-- 2m x 2m arena centered at origin; keep everything near center for visibility -->
   <arena size="2,2,1" center="0,0,0.5">
 
-    <!-- Two robots aligned on X (same column index), offset in Y to avoid wake overlap -->
-    <e-puck2 id="1" rab_range="2" rab_data_size="1">
-      <body position="0.08,-0.12,0" orientation="180,0,0"/>
+    <!-- Upwind leader -->
+    <foot-bot id="1" rab_range="2" rab_data_size="1">
+      <body position="0.00,0.00,0" orientation="180,0,0"/>
       <controller config="airbot"/>
-    </e-puck2>
+    </foot-bot>
 
-    <e-puck2 id="2" rab_range="2" rab_data_size="1">
-      <body position="0.08,0.12,0" orientation="180,0,0"/>
+    <!-- follower -->
+    <foot-bot id="2" rab_range="2" rab_data_size="1">
+      <body position="0.18,0.00,0" orientation="180,0,0"/>
       <controller config="airbot"/>
-    </e-puck2>
+    </foot-bot>
 
   </arena>
 

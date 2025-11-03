@@ -6,7 +6,7 @@
     </framework>
 
     <configuration>
-        <air_resistance angle_deg="0" magnitude="10.0"/>
+        <air_resistance angle_deg="0" magnitude="15.0"/>
     </configuration>
 
     <controllers>
@@ -21,7 +21,7 @@
                 <positioning implementation="default"/>
                 <range_and_bearing implementation="medium" medium="rab" show_rays="true"/>
             </sensors>
-            <params velocity="10.0"/>
+            <params velocity="15.0"/>
         </air_resistance_controller>
     </controllers>
 
