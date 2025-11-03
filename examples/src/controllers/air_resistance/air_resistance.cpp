@@ -69,6 +69,21 @@ void CAirResistance::EnsurePhysicsHandle()
    auto& cComposable = dynamic_cast<CComposableEntity&>(cEntity);
    auto& cEmbodied   = cComposable.GetComponent<CEmbodiedEntity>("body");
 
+   /* --- NEW: derive self radius from AABB (meters) --- */
+   {
+      const SBoundingBox& bb = cEmbodied.GetBoundingBox();
+      const Real width =  bb.MaxCorner.GetX() - bb.MinCorner.GetX();
+      const Real depth =  bb.MaxCorner.GetY() - bb.MinCorner.GetY();
+      const Real r = 0.5 * std::max(width, depth);
+
+//LOG << "my derived self radius is:" << r << "\n";
+
+      /* sanity window: ignore absurd/zero values; keep previous fallback if so */
+      if(std::isfinite(r) && r > 0.005 /*5mm*/ && r < 0.50 /*50cm*/)
+         m_fSelfRadiusM = r;
+      /* else keep the existing m_fSelfRadiusM (default 0.04f) */
+   }
+
    /* Get the generic physics model and then downcast */
    CPhysicsModel& cPhys = cEmbodied.GetPhysicsModel("dyn2d");
 
