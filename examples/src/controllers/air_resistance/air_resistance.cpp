@@ -13,6 +13,7 @@
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_single_body_object_model.h>
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_engine.h>
 #include <argos3/plugins/simulator/physics_engines/dynamics2d/chipmunk-physics/include/chipmunk.h>
+#include <argos3/plugins/simulator/physics_engines/dynamics2d/dynamics2d_multi_body_object_model.h>
 
 #include <algorithm>
 #include <cmath>
@@ -63,17 +64,38 @@ void CAirResistance::EnsurePhysicsHandle()
 {
    if(m_bBodyReady) return;
 
+   /* Fetch this controller's entity and its dyn2d physics model */
    CEntity& cEntity = CSimulator::GetInstance().GetSpace().GetEntity(GetId());
    auto& cComposable = dynamic_cast<CComposableEntity&>(cEntity);
    auto& cEmbodied   = cComposable.GetComponent<CEmbodiedEntity>("body");
 
-   auto* pcModel = dynamic_cast<CDynamics2DSingleBodyObjectModel*>(
-                     &cEmbodied.GetPhysicsModel("dyn2d"));
-   if(!pcModel)
-      THROW_ARGOSEXCEPTION("No dyn2d model for " << GetId());
+   /* Get the generic physics model and then downcast */
+   CPhysicsModel& cPhys = cEmbodied.GetPhysicsModel("dyn2d");
 
-   m_ptBody     = pcModel->GetBody();
-   m_bBodyReady = true;
+   /* --- Single-body (e-puck2 style) --- */
+   if(auto* pcSingle = dynamic_cast<CDynamics2DSingleBodyObjectModel*>(&cPhys)) {
+      m_ptBody     = pcSingle->GetBody();
+      m_bBodyReady = (m_ptBody != nullptr);
+      if(!m_bBodyReady) {
+         THROW_ARGOSEXCEPTION("dyn2d single-body model returned null Chipmunk body for " << GetId());
+      }
+      return;
+   }
+
+   /* --- Multi-body (foot-bot, etc.) --- */
+   if(auto* pcMulti = dynamic_cast<CDynamics2DMultiBodyObjectModel*>(&cPhys)) {
+      /* Heuristic: take body #0 (main chassis in stock robots) */
+      cpBody* pMain = pcMulti->GetBody(0).Body;   // SBody::Body is cpBody*
+      if(!pMain) {
+         THROW_ARGOSEXCEPTION("dyn2d multi-body model body[0] is null for " << GetId());
+      }
+      m_ptBody     = pMain;
+      m_bBodyReady = true;
+      return;
+   }
+
+   /* Neither single nor multi */
+   THROW_ARGOSEXCEPTION("No compatible dyn2d model (single/multi) for " << GetId());
 }
 
 /* --------------------------------------------------------------- */
@@ -264,6 +286,7 @@ void CAirResistance::DriveImpulse(Real velocity_cm_s)
 /* PRE: reset + wind + broadcast; no scheduling here */
 void CAirResistance::HandleAerodynamicsPreStep()
 {
+	
    EnsurePhysicsHandle();
 
    /* reset per-tick accumulator */
@@ -273,11 +296,17 @@ void CAirResistance::HandleAerodynamicsPreStep()
    ApplyWindImpulse();
 
    /* RAB broadcast: radius in mm */
-   if(m_pcRABAct) {
-      UInt8 r_mm = static_cast<UInt8>(
-         std::min<Real>(255.0, std::round(m_fSelfRadiusM * 1000.0)));
-      CByteArray data(1, r_mm);
-      m_pcRABAct->SetData(data);
+   if(m_pcRABAct) 
+   {
+   const UInt8 r_mm = static_cast<UInt8>(
+      std::min<Real>(255.0, std::round(m_fSelfRadiusM * 1000.0)));
+
+   /* Robot-agnostic: write just byte #0; no size mismatch regardless of total RAB size */
+   m_pcRABAct->SetData(0, r_mm);
+
+   /* (Optional) If you want to ensure the rest is zero on every tick and your build exposes
+      the data size accessor, you could loop i=1..N-1 and SetData(i,0). Not required though;
+      by default the remaining bytes are already 0. */
    }
 }
 

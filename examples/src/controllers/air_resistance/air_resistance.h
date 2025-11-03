@@ -13,26 +13,32 @@ struct cpBody;
 
 namespace argos {
 
-   class CAirResistance final : public CCI_Controller {
+   class CAirResistance : public CCI_Controller { /* removed 'final' to allow subclassing */
 
    public:
-      void Init(TConfigurationNode& t_node) override;
-      void ControlStep()                   override;
-      void Reset()                         override {}
-      void Destroy()                       override {}
+      /* All lifecycle methods are virtual so users can override everything if they wish. */
+      virtual ~CAirResistance() = default;
 
-   private:
+      /* Users may fully override Init/ControlStep/Reset/Destroy. */
+      virtual void Init(TConfigurationNode& t_node) override;
+      virtual void ControlStep()                   override;
+      virtual void Reset()                         override {}
+      virtual void Destroy()                       override {}
+
+   protected:
       /* physics + wind handling */
-      void EnsurePhysicsHandle();
-      void ApplyWindImpulse();                 // adds to accumulator
-      void DriveImpulse(Real velocity_cm_s);   // adds to accumulator
-      void HandleAerodynamicsPreStep();        // reset + wind + broadcast
-      void HandleAerodynamicsPostStep();       // schedule single post-step to apply sum
+      /* These helpers are virtual to allow alternative pipelines in derived classes.
+         Derived classes can call the base implementations or replace them entirely. */
+      virtual void EnsurePhysicsHandle();              /* obtains dyn2d handle */
+      virtual void ApplyWindImpulse();                 /* adds to accumulator */
+      virtual void DriveImpulse(Real velocity_cm_s);   /* adds to accumulator */
+      virtual void HandleAerodynamicsPreStep();        /* reset + wind + broadcast */
+      virtual void HandleAerodynamicsPostStep();       /* schedule single post-step to apply sum */
 
       /* blocking (returns true if any neighbor provides reduction; sets [0,1]) */
-      bool     IsBlockedByRAB(Real& fOutReduction) const;
-      CVector2 ComputeEffectiveWind() const;
-      Real     GetYawRadians() const;
+      virtual bool     IsBlockedByRAB(Real& fOutReduction) const;
+      virtual CVector2 ComputeEffectiveWind() const;
+      virtual Real     GetYawRadians() const;
 
       /* devices */
       CCI_DifferentialSteeringActuator* m_pcWheels = nullptr; // unused when driving by impulse
