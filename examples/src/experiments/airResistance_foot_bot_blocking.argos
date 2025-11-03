@@ -22,7 +22,7 @@
         <positioning implementation="default"/>
         <range_and_bearing implementation="medium" medium="rab" show_rays="true"/>
       </sensors>
-      <params velocity="25.0" self_radius_m="0.85"/>
+      <params velocity="25.0"/>
     </air_resistance_controller>
   </controllers>
 
